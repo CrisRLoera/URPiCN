@@ -1,0 +1,178 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
+\usepackage{longtable}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{amsmath}
+\usepackage{latexsym}%,pstricks,color,epic,eepic}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[rightcaption]{sidecap}
+\usepackage{csvsimple-l3}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{pgfplotstable,filecontents}
+\pgfplotsset{compat=1.9}% supress warning
+\usepackage{eso-pic}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+%\usepackage[firstpage]{draftwatermark
+%\usepackage[doublespace]{setspace}  
+
+\usepackage{draftwatermark}
+% Use the following to make modification
+%\SetWatermarkAngle{45}
+%\SetWatermarkLightness{0.01}
+%\SetWatermarkFontSize{3.0cm}
+%\SetWatermarkScale{1.0}
+\SetWatermarkText{FING, UACH}%\includegraphics{Logo_UACH.png} }
+
+%\usepackage{background}
+%\backgroundsetup{contents={\includegraphics[scale=0.4]{Logo_UACH.png}}}
+\decimalpoint
+
+%\hoffset = -50pt
+%\voffset = -50pt
+%\textwidth = 500pt
+%\textheight = 615pt
+
+%\texttt{\AddToShipoutPictureBG*
+%  {%
+%    \put(\LenToUnit{.1\paperwidth}, \LenToUnit{.85\paperheight})
+%      {\includegraphics[scale=0.2]{Logo_UACH}}%
+%  }
+%}
+\parskip 1em
+
+\def\IR{{\rm I\!R}}  %for real numbers
+\def\IN{{\rm I\!N}}  %for integer numbers
+\def\IC{{\rm C}\llap{\vrule height7.1pt width1pt
+     depth-.4pt\phantom t}} %for complex numbers \def\covD{{\rmI\!D}}
+\def\IQ{{\rm Q}\llap{\vrule height7.7pt width1pt
+     depth-.4pt\phantom t}} %for complex numbers \def\covD{{\rmI\!D}}
+
+%   Si pones en tus definiciones las siguientes instrucciones:
+
+\font\cmss=cmss10
+\font\cmsss=cmss10 at 7pt
+
+\def\IZ{\relax\ifmmode\mathchoice
+{\hbox{\cmss Z\kern-.4em Z}}{\hbox{\cmss Z\kern-.4em Z}}
+{\lower.9pt\hbox{\cmsss Z\kern-.4em Z}}
+{\lower1.2pt\hbox{\cmsss Z\kern-.4em Z}}\else{\cmss Z\kern-.4em Z}\fi}
+
+%   podr'as usar  $ \IZ $  para denotar los enteros.
+
+
+%---------------*******************************------------------------
+
+
+% Definition of title page:
+\title{\textsf{
+    Reporte Patrones de resiliencia\\
+Laboratorio de Sistemas Complejos}}
+\author{Cristian Yael Rubi Loera}
+%\pagestyle{headings}
+\date{octubre 2024}
+%{10 de octubre de 2006}
+
+% Definition of \maketitle
+\pagenumbering{Roman}
+
+\begin{document}
+
+ \begin{minipage}[t]{\textwidth}
+   \centering
+   \raisebox{-\baselineskip}{\rule{\textwidth}{1px}}
+   \rule{\textwidth}{1px}
+   \vspace{0.2cm}
+   \maketitle
+   \rule{\textwidth}{2px}
+ \end{minipage}
+ 
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+\section{Replicación de resultados de en redes mutualistas}
+
+
+Con base en la información suplementaria del artículo~\cite{gao2016universal}.
+Como matriz de interacción para la simulación se tomó la siguiente matriz de $26 \times 10$ de un ecosistema de anemonas y peces (por simplicidad, se refiere estas interacciones como plantas y polinizadores respectivamente, estos roles se mantienen para los demás ecosistemas con redes mutualistas):
+
+\begin{equation*}
+M_{nm}=\begin{vmatrix}
+1&1&1&1&1&1&1&1&1&1\\
+1&1&1&1&1&1&1&0&0&0\\
+1&1&1&1&1&0&1&1&0&0\\
+0&0&1&1&1&0&1&0&0&0\\
+1&1&1&1&1&1&0&0&0&0\\
+1&1&0&1&1&0&0&0&0&0\\
+1&0&1&0&0&1&0&1&0&0\\
+0&1&0&1&1&0&0&0&0&0\\
+1&1&1&0&0&1&0&0&0&0\\
+0&0&1&1&0&1&0&0&0&0\\
+1&0&1&0&0&1&0&0&0&0\\
+1&0&1&1&0&0&0&0&0&0\\
+1&0&0&0&0&0&1&1&0&0\\
+1&1&0&0&0&0&1&0&0&0\\
+0&1&0&0&0&1&0&0&0&0\\
+1&0&0&1&0&0&0&0&0&0\\
+0&0&1&1&0&0&0&0&0&0\\
+1&1&0&0&0&0&0&0&0&0\\
+0&1&0&0&0&0&0&0&0&0\\
+0&0&0&1&0&0&0&0&0&0\\
+1&0&0&0&0&0&0&0&0&0\\
+0&0&0&1&0&0&0&0&0&0\\
+0&1&0&0&0&0&0&0&0&0\\
+0&0&1&0&0&0&0&0&0&0\\
+0&0&0&0&0&0&1&0&0&0\\
+0&1&0&0&0&0&0&0&0&0\\
+\end{vmatrix}
+\end{equation*}
+
+
+
+Partiendo de una matriz de interacción $M_{nm}$ donde $n$ consiste en las plantas y $m$ en los polinizadores, se requiere crear una matriz $A$ dada por: $
+A_{ij}=\sum^m_{k=1}\frac{M_{ik}M_{jk}}{\sum^n_{s=1}M_{sk}}
+$ para la siguiente ecuación.
+
+Ahora podemos resolver la ecuación siguiente, cuya simulación numérica fue realizada usando Runge-Kutta de cuarto orden~\cite{numerical2002recipes}:
+
+\begin{equation}
+\label{ec:Diferencial}
+\frac{dx_i}{dt} = B_{i}+x_{i}\left( 1-\frac{x_{i}}{K_{i}}\right ) \left(\frac{x_{i}}{C_{i}}-1\right)+\sum^N_{j=1}A_{ij}\frac{x_{i}x_{j}}{D_{i}+E_{i}x_{i}+H_{j}x_{j}}
+\end{equation}
+
+
+Donde para todos los parámetros en la ecuación~\eqref{ec:Diferencial} se usan los siguientes valores constantes:
+\begin{eqnarray*}
+B_{i}&=&B=0.1,\\
+C_{i}&=&C=1,\\
+K_{i}&=&K=5,\\ 
+D_{i}&=&D=5,\\
+E_{i}&=&E=0.9,\\
+H_{j}&=&H=0.1\ .
+\end{eqnarray*}
+
+En la ejecución se define a cada $x_{i}(0)=10^{-3}$.En la figura~\ref{fig-sol} se puede observar como las 26 trayectorias simuladas crecen hasta llegar a un punto estable.
+
+\begin{figure}[hb]
+\label{fig-sol}
+\includegraphics[scale=1]{plot.pdf}
+\caption{Se aprecian las primeras 5 soluciones de 26 de ellas, las cuales son cualitativamente semejantes, donde apartir del 120 en el eje horizontal la solución incrementa hasta alcanzar un punto estable, el cual no se muestra ya a partir del 180.}
+\end{figure}
+
+        
+\bibliographystyle{unsrt}
+\bibliography{bibliografia} 
+%\printbibliography 
+\end{document}
+
