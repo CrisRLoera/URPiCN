@@ -7,10 +7,11 @@ if [ -z "$1" ]; then
 fi
 
 # Variables
-cs_file="$1"
-exe_file="main.exe"
-csv_file="project.csv"
-gnuplot_script="plot_base.gnu"
+path_file="$1"
+cs_file="./$path_file/main.cs"
+exe_file="./$path_file/main.exe"
+csv_file="./$path_file/project.csv"
+gnuplot_script="./$path_file/plot_base.gnu"
 
 # Compila el archivo .cs con mcs
 echo "Compilando $cs_file..."

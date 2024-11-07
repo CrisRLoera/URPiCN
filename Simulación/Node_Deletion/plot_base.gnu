@@ -1,6 +1,6 @@
 set terminal pngcairo
 set datafile separator ","
-set output 'outputplottest.png'
+set output 'plot_node_deletion.png'
 set xlabel "Fracción de nodos eliminados"
 set ylabel "Media de los valores finales de y[i]"
 set title "Media de y[i] vs Fracción de nodos eliminados"
