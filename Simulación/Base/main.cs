@@ -5,15 +5,13 @@ using System.Linq;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        
-        int n = 26;
         double inct = 1000.0;
         double h = 25.0 / (inct - 1.0);
-        // inct = 10;
-
-        string filePath = "/home/crisdev/Escritorio/UACH/ProyectoUACH/Datasets/Plant-Pollinator-96-276";
+        
+        // Importamos el dataset y lo almacenados en M de la forma exacta a la matriz del archivo
+        string filePath = "/home/crisdev/Escritorio/UACH/ProyectoUACH/Datasets/Anemona-fish-26-10";
         double[][] M = File.ReadAllLines(filePath)
             .Where(line => !string.IsNullOrWhiteSpace(line))
             .Select(line => line.Split('\t')
@@ -21,34 +19,66 @@ class Program
                 .ToArray())
             .ToArray();
 
-        Console.WriteLine("Se creó la matriz M");
-        int n2 = M.Length; // Número de filas
-        int m = M[0].Length; // Número de columnas
-        
-        List<double[]> X0_cond = new List<double[]>();
-        X0_cond.Add(Enumerable.Repeat(0.001, 26).ToArray());
+        /*  Se invierten las filas y las columnas para que la matriz quede de a forma n x m, donde
+            n son las plantas y m los polinisadore 
+        */
+        M = M[0].Select((_, i) => M.Select(row => row[i]).ToArray()).ToArray();     
 
-        double[,] A = CalcularMatrizA(M, n2,m);
-        
-        Console.WriteLine("Se creó la matriz A");
-        Console.WriteLine("\nMatriz A:");
-        for (int i = 0; i < n2; i++)
+        // Definir los N y los M
+        int n = M.Length; // Número de filas - plantas
+        int m = M[0].Length; // Número de columnas - polinisadores
+
+        // Imprimir la matriz M
+        /*
+        for(int i = 0; i < n ; i++ )
         {
-            for (int j = 0; j < n2; j++)
+            for(int j = 0; j < m ; j++ )
+            {
+                Console.Write($"{M[i][j]:F4}\t");
+            }
+            Console.Write("\n");
+
+        }*/
+        
+        //Console.WriteLine("Se creó la matriz M");
+
+        //Console.WriteLine($"Plantas: {n}");
+        
+        // Vector de condiciones iniciales
+        List<double[]> X0_cond = new List<double[]>();
+        // X_H = 6.0 Y X_L = 0.001
+
+        X0_cond.Add(Enumerable.Repeat(0.001, n).ToArray());
+
+        double[,] A = CalcularMatrizA(M, n,m);
+
+        //Imprimir matriz A
+        /*
+        Console.WriteLine("\nMatriz A:");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
             {
                 Console.Write($"{A[i,j]:F4}\t");
             }
-            Console.WriteLine();
-        }
-        double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
+            Console.Write("\n");
+        }*/
 
-        using (StreamWriter writer = new StreamWriter("project.csv"))
+        // Constantes para la ecuación diferencial
+        double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
+        string csv_file_name = "default.csv";
+        if (args.Length > 0)
+        {
+            csv_file_name = args[0] + ".csv"; // Asignar el primer argumento como nombre del archivo y agregar .csv
+            Console.WriteLine($"Nombre del archivo CSV: {csv_file_name}"); // Imprimir el nombre del archivo
+        }
+        using (StreamWriter writer = new StreamWriter(csv_file_name))
         {
 
             foreach (var x0 in X0_cond)
             {
-                Console.WriteLine("X0");
-                Console.WriteLine($"X0: {string.Join(", ", x0.Select(val => $"{val:F4}"))}");
+
+                //Console.WriteLine($"X0: {string.Join(", ", x0.Select(val => $"{val:F4}"))}");
 
                 double[] y = (double[])x0.Clone();
                 
@@ -60,58 +90,74 @@ class Program
 
                 for (int i = 0; i < inct; i++)
                 {
-                    Console.WriteLine($"\nIteración {i}:");
-                    Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
+                    //Console.WriteLine($"\nIteración {i}:");
+                    //Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
                     rk4(y, dydx, n, x, h, yout, (xh, yt, dyt) => ProjectFunction(yt, dyt, B, K, C, A, D, E, H));
                     
                     for (int j = 0; j < n; j++)
                         y[j] = yout[j];
                     x += h;
+
+                    // Grabar en el archivo csv las n trayectorias
+                    /*
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));
-                    writer.WriteLine($"{yValues}");
+                    writer.WriteLine($"{yValues}");*/
 
+                    // Grabar en el archivo csv el promedio de las n trayectorias
                     lastYValues = (double[])y.Clone();
+                    double average = lastYValues.Average();
+                    writer.WriteLine($"{average}");
                 }
-
-                double average = lastYValues.Average();
-                Console.WriteLine($"\nPromedio de los últimos valores de y: {average:F4}");
-                //writer.WriteLine($"\nPromedio de los últimos valores de y: {average:F4}");
-
             }
         }
 
-        Console.WriteLine("Save");
+        Console.WriteLine($"Datos guardados en {csv_file_name}");
     }
 
-    static double[,] CalcularMatrizA(double[][] M,int n2_length,int m_length)
+    
+    static double[,] CalcularMatrizA(double[][] M,int n_length,int m_length)
     {
-        int n2 = n2_length;
+        int n = n_length;
         int m = m_length;
-        double[,] A = new double[n2, n2];
-
-        for (int i = 0; i < n2; i++)
+        double[,] A = new double[n, n];
+        double[] M_sum = new double[m];
+        // Calcular M_sum - El cual da un vecotr de los denominadores usados para calcular A_ij
+        for (int k = 0; k < m; k++)
         {
-            for (int j = 0; j < n2; j++)
+            double denominator = 0.0;
+
+            for (int s = 0; s < n; s++)
+            {
+                denominator += M[s][k];
+            }
+            M_sum[k]=denominator;
+        }
+        // Imprimir vector M_sum
+        /*
+        for (int i = 0; i < m; i++)
+        {    
+            Console.Write($"M_sum {i}:{M_sum[i]:F4}\t");
+        }*/
+        /*
+        De la proyección de una red bipartita n x m donde i es una planta y k un polinisador
+        */  
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
             {
                 double sum_k = 0.0;
 
                 for (int k = 0; k < m; k++)
                 {
                     double numerator = M[i][k] * M[j][k];
-                    double denominator = 0.0;
 
-                    for (int s = 0; s < n2; s++)
-                    {
-                        denominator += M[s][k];
-                    }
-
-                    sum_k += numerator / denominator;
+                    sum_k += numerator / M_sum[k];
                 }
 
                 A[i, j] = sum_k;
             }
         }
-        Console.WriteLine("Se creó la matriz A");
+        //Console.WriteLine("Se creó la matriz A");
         return A;
     }
 

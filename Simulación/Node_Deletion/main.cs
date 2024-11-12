@@ -46,9 +46,12 @@ class Program
         List<double> yAverages = new List<double>();
 
         // Abre un StreamWriter para guardar los resultados en un archivo CSV
-        using (StreamWriter writer = new StreamWriter("project.csv"))
+        using (StreamWriter writer = new StreamWriter("project3.csv"))
         {
             // Itera sobre cada condición inicial
+            double[] xeff = new double[n2];
+            double[] Beff = new double[n2];
+
             foreach (var x0 in X0_cond)
             {
                 Console.WriteLine("Procesando condición inicial...");
@@ -123,20 +126,25 @@ class Program
                     //fractionsRemoved.Add(fractionRemoved);
                     //yAverages.Add(averageY);
 
-                    double[] xeff = new double[currentSize];
                     
                     double[] vectorUnos = Enumerable.Repeat(1.0, currentSize).ToArray();
                     double[,] MatrizUnos = ConvertVectorToMatrizT(vectorUnos);
                     double[,] currentYtoM = ConvertVectorToMatriz(currentY);
-                    /*
-                    double[,] vectorTranspuesto = new double[n2, 1];
-                    for (int i = 0; i < n2; i++)
+                    
+                    double[,] vectorTranspuesto = new double[currentSize, 1];
+                    for (int i = 0; i < currentSize; i++)
                     {
                         vectorTranspuesto[i, 0] = vectorUnos[i];
                     }
-                    */
+                    // Calcular xeff
                     double[,] oneA = MultiMatriz2(MatrizUnos,modifiedA);
                     double[,] numer = MultiMatriz2(oneA,currentYtoM);
+                    double[,] denom = MultiMatriz2(oneA,vectorTranspuesto);
+                    // Calculamos Beff
+                    double[,] s_in = ConvertVectorToMatriz(getS_in(modifiedA,currentSize));
+                    double[,] numerBeff = MultiMatriz2(oneA,s_in);
+                    
+                    /*
                     Console.WriteLine("Elementos del vector numer:");
                     int filas = numer.GetLength(0);
                     int columnas = numer.GetLength(1);
@@ -148,11 +156,53 @@ class Program
                             Console.WriteLine($"numer[{i},{j}] = {numer[i,j]}");
                         }
                     }
+                    Console.WriteLine("Elementos del vector denom:");
+                    filas = demon.GetLength(0);
+                    columnas = demon.GetLength(1);
+                    Console.WriteLine($"Filas{filas} Columnas{columnas}");
+                    for (int i = 0; i < filas; i++)
+                    {
+                        for (int j = 0; j < columnas; j++)
+                        {
+                            Console.WriteLine($"numer[{i},{j}] = {demon[i,j]}");
+                        }
+                    }
+                    Console.WriteLine("Elementos del vector numerBeff:");
+                    int filas = numerBeff.GetLength(0);
+                    int columnas = numerBeff.GetLength(1);
+                    Console.WriteLine($"Filas{filas} Columnas{columnas}");
+                    for (int i = 0; i < filas; i++)
+                    {
+                        for (int j = 0; j < columnas; j++)
+                        {
+                            Console.WriteLine($"numerBeff[{i},{j}] = {numerBeff[i,j]}");
+                        }
+                    }
+                    */
+                    
+                    Console.WriteLine($"xeff:{numer[0,0]/denom[0,0]}");
+                    Console.WriteLine($"Beff:{numerBeff[0,0]/denom[0,0]}");
+                    
+                    xeff[removedNodes] = numer[0,0]/denom[0,0];
+                    Beff[removedNodes] = numerBeff[0,0]/denom[0,0];
 
 
-
-                    double Beff = new double();
+                    
                 }
+
+                for (int i = 0; i < n2; i++)
+                {
+                    writer.WriteLine($"{xeff[i]},{Beff[i]}"); // Escribe en el archivo CSV
+                }
+                foreach(var i in xeff)
+                {
+                    Console.WriteLine($"Xeff:{i}");
+                }
+                foreach(var i in Beff)
+                {
+                    Console.WriteLine($"Beff:{i}");
+                }
+                
                 
             }
 
@@ -164,7 +214,7 @@ class Program
                 writer.WriteLine($"{fractionsRemoved[i]},{yAverages[i]}"); // Escribe en el archivo CSV
             }*/
             //
-
+            
             // 
         }
 
@@ -172,14 +222,29 @@ class Program
         Console.WriteLine("Datos guardados para graficar.");
     }
 
+    static double[] getS_in(double[,] A,int size)
+    {
+        double[] s_in = new double[size];
+        for (int i = 0; i < A.GetLength(0); i++)
+        {
+            double sum = 0;
+            for (int j = 0; j < A.GetLength(1); j++)
+            {
+                sum += A[i,j];
+            }
+            s_in[i] = sum;
+        }
+        return s_in;
+    }
+
     static double[,] ConvertVectorToMatriz(double[] vector)
     {
         double[,] vectorToMatriz = new double[vector.Length,1];
-        Console.WriteLine(vector.Length);
+        //Console.WriteLine(vector.Length);
         for (int i = 0; i < vector.Length; i++)
         {
             vectorToMatriz[i, 0] = vector[i];
-            Console.WriteLine(i);
+            //Console.WriteLine(i);
         }
         return vectorToMatriz;
     }
@@ -195,8 +260,8 @@ class Program
     // Método para calcular la multilplicación de un a matriz por otra
     static double[,] MultiMatriz2(double[,] A, double[,] B)
     {
-        Console.WriteLine($"Dimensiones de A: {A.GetLength(0)} x {A.GetLength(1)}");
-        Console.WriteLine($"Dimensiones de B: {B.GetLength(0)} x {B.GetLength(1)}");
+        //Console.WriteLine($"Dimensiones de A: {A.GetLength(0)} x {A.GetLength(1)}");
+        //Console.WriteLine($"Dimensiones de B: {B.GetLength(0)} x {B.GetLength(1)}");
         
         int filasA = A.GetLength(0);
         int columnasA = A.GetLength(1);
@@ -250,40 +315,40 @@ class Program
 
     // Método para eliminar nodos de la matriz A
     static double[,] RemoveNodesFromMatrix(double[,] A, int removedNodes)
-{
-    int originalSize = A.GetLength(0);
-    int newSize = originalSize - removedNodes;
-    
-    if (newSize <= 0) return new double[0,0];
-    
-    // Crear lista de índices disponibles
-    List<int> availableIndices = Enumerable.Range(0, originalSize).ToList();
-    Random random = new Random();
-    
-    // Seleccionar índices a mantener
-    List<int> indicesToKeep = new List<int>();
-    for (int i = 0; i < newSize; i++)
     {
-        int randomIndex = random.Next(availableIndices.Count);
-        indicesToKeep.Add(availableIndices[randomIndex]);
-        availableIndices.RemoveAt(randomIndex);
-    }
-    
-    // Ordenar los índices para mantener la estructura de la matriz
-    indicesToKeep.Sort();
-    
-    // Crear nueva matriz con los nodos seleccionados
-    double[,] newA = new double[newSize, newSize];
-    for (int i = 0; i < newSize; i++)
-    {
-        for (int j = 0; j < newSize; j++)
+        int originalSize = A.GetLength(0);
+        int newSize = originalSize - removedNodes;
+        
+        if (newSize <= 0) return new double[0,0];
+        
+        // Crear lista de índices disponibles
+        List<int> availableIndices = Enumerable.Range(0, originalSize).ToList();
+        Random random = new Random();
+        
+        // Seleccionar índices a mantener
+        List<int> indicesToKeep = new List<int>();
+        for (int i = 0; i < newSize; i++)
         {
-            newA[i,j] = A[indicesToKeep[i], indicesToKeep[j]];
+            int randomIndex = random.Next(availableIndices.Count);
+            indicesToKeep.Add(availableIndices[randomIndex]);
+            availableIndices.RemoveAt(randomIndex);
         }
-    }
-    
-    Console.WriteLine($"Creando nueva matriz A de tamaño {newSize} x {newSize} tras eliminar {removedNodes} nodos aleatorios...");
-    return newA;
+        
+        // Ordenar los índices para mantener la estructura de la matriz
+        indicesToKeep.Sort();
+        
+        // Crear nueva matriz con los nodos seleccionados
+        double[,] newA = new double[newSize, newSize];
+        for (int i = 0; i < newSize; i++)
+        {
+            for (int j = 0; j < newSize; j++)
+            {
+                newA[i,j] = A[indicesToKeep[i], indicesToKeep[j]];
+            }
+        }
+        
+        Console.WriteLine($"Creando nueva matriz A de tamaño {newSize} x {newSize} tras eliminar {removedNodes} nodos aleatorios...");
+        return newA;
     }
 
     // Método de Runge-Kutta de cuarto orden
