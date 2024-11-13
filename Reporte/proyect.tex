@@ -162,13 +162,27 @@ E_{i}&=&E=0.9,\\
 H_{j}&=&H=0.1\ .
 \end{eqnarray*}
 
-En la ejecución se define a cada $x_{i}(0)=10^{-3}$.En la figura~\ref{fig-sol} se puede observar como las 26 trayectorias simuladas crecen hasta llegar a un punto estable.
+En la ejecución se define a cada $x_{i}(0)=10^{-3}$.En la figura~\ref{fig-sol} se puede observar como las 10 trayectorias simuladas crecen hasta llegar a un punto estable.
+
+\begin{figure}[hb]
+\label{fig-sol-all}
+\includegraphics[width=10cm, height=10cm]{output_plot_all.png}
+\caption{En esta imagen se puede apreciar el crecimiento de las poblaciones en cada iteración de los $n$ polinizadores en la red, de acuerdo con la ecuación diferencial.No se graficó más allá de la iteración 700, ya que a partir de ese punto las poblaciones se estabilizan.}
+\end{figure}
+
+Llegado a estos resultados se grafico la media de todas las $x_i$ a lo largo de las iteraciones para observar el comportamiento global del sistema.
 
 \begin{figure}[hb]
 \label{fig-sol}
 \includegraphics[width=10cm, height=10cm]{output_plot.png}
-\caption{En esta imagen se puede apreciar el crecimiento de las poblaciones en cada iteración de los $n$ polinizadores en la red, de acuerdo con la ecuación diferencial.No se graficó más allá de la iteración 700, ya que a partir de ese punto las poblaciones se estabilizan}
+\caption{Aquí el crecimiento logistico sigue siendo representativo del sistema y al igual que en el anterior llega a un punto estable a partir de la iteracción 600.}
 \end{figure}
+
+Una vez que se tiene este caso base del cual partir para las diferentes perturvaciones se comenzo por eliminar nodos.Los cuales tienen una fraccion $f_{n}$ de probabilidad de ser eliminados de la matris $A_{ij}$.
+
+Comparando las medias de las $x_{i}$ con las fracciones
+
+
 
         
 \bibliographystyle{unsrt}
