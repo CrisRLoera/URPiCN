@@ -66,13 +66,7 @@ class Program
 
         // Constantes para la ecuación diferencial
         double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
-        string csv_file_name = "default.csv";
-        if (args.Length > 0)
-        {
-            csv_file_name = args[0] + ".csv"; // Asignar el primer argumento como nombre del archivo y agregar .csv
-            Console.WriteLine($"Nombre del archivo CSV: {csv_file_name}"); // Imprimir el nombre del archivo
-        }
-        using (StreamWriter writer = new StreamWriter(csv_file_name))
+        using (StreamWriter writer = new StreamWriter("base_all.csv"))
         {
 
             foreach (var x0 in X0_cond)
@@ -99,19 +93,21 @@ class Program
                     x += h;
 
                     // Grabar en el archivo csv las n trayectorias
-                    /*
+                    
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));
-                    writer.WriteLine($"{yValues}");*/
+                    writer.WriteLine($"{yValues}");
 
                     // Grabar en el archivo csv el promedio de las n trayectorias
+                    /*
                     lastYValues = (double[])y.Clone();
                     double average = lastYValues.Average();
                     writer.WriteLine($"{average}");
+                    */
                 }
             }
         }
 
-        Console.WriteLine($"Datos guardados en {csv_file_name}");
+        Console.WriteLine("Datos guardados");
     }
 
     

@@ -7,12 +7,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        double f_n = 0.0;
-        if(args.Length > 0)
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        double running_times = 20;
+
+        double delta_inct = 100;
+
+        if (args.Length > 0)
         {
-            f_n = double.Parse(args[0]);
+            if (!string.IsNullOrEmpty(args[0]))
+            {
+                double.TryParse(args[1], out delta_inct);
+            }
+            if (!string.IsNullOrEmpty(args[1]))
+            {
+                double.TryParse(args[1], out running_times);
+            }
         }
 
+        for(int i = 0; i < running_times; i++)
+        {
+            using (StreamWriter writer = new StreamWriter($"total_{i}.csv"))
+            {
+                double delta_sum = 0.0;
+                double avrg = 0.0;
+                for(int j = 0; j <= delta_inct;j++)
+                {
+                    avrg = Run_program(delta_sum);
+                    writer.WriteLine($"{avrg},{delta_sum}");
+                    delta_sum += (1/delta_inct);
+                }
+            }
+            Console.WriteLine($"Se termino la ejecución: {i}");
+        }
+        stopwatch.Stop();
+        Console.WriteLine($"Tiempo de ejecución: {stopwatch.Elapsed.TotalSeconds} segundos");
+    }
+
+    static double Run_program(double delta)
+    {
+        double f_n = delta;
+        //Console.WriteLine($"Delta:{f_n}");
         double inct = 1000.0;
         double h = 25.0 / (inct - 1.0);
         
@@ -54,7 +89,7 @@ class Program
         List<double[]> X0_cond = new List<double[]>();
         // X_H = 6.0 Y X_L = 0.001
 
-        X0_cond.Add(Enumerable.Repeat(0.001, n).ToArray());
+        X0_cond.Add(Enumerable.Repeat(6.0, n).ToArray());
 
         double[,] A = CalcularMatrizA(M, n,m);
 
@@ -74,6 +109,10 @@ class Program
 
         // Constantes para la ecuación diferencial
         double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
+
+        double average = 0.0;
+
+        using (StreamWriter writer_i = new StreamWriter($"node_i_{f_n}.csv"))
         using (StreamWriter writer = new StreamWriter($"node_f_{f_n}.csv"))
         {
 
@@ -101,19 +140,19 @@ class Program
                     x += h;
 
                     // Grabar en el archivo csv las n trayectorias
-                    /*
+                    
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));
-                    writer.WriteLine($"{yValues}");*/
+                    writer_i.WriteLine($"{yValues}");
 
                     // Grabar en el archivo csv el promedio de las n trayectorias
                     lastYValues = (double[])y.Clone();
-                    double average = lastYValues.Average();
+                    average = lastYValues.Average();
                     writer.WriteLine($"{average}");
                 }
             }
         }
-
-        Console.WriteLine($"Datos guardados");
+        //Console.WriteLine($"Datos guardados");
+        return average;
     }
 
     
@@ -171,7 +210,7 @@ class Program
         for(int i = 0; i < n;i++)
         {
             double px_i = random.NextDouble();
-            Console.WriteLine($"Probabilidad obtenida: {px_i}, f_n: {f_n}"); // Imprimir la probabilidad obtenida contra f_n
+            //Console.WriteLine($"Probabilidad obtenida: {px_i}, f_n: {f_n}"); // Imprimir la probabilidad obtenida contra f_n
             if(px_i < f_n)
             {
                 for(int j = 0; j < n;j++)
@@ -182,8 +221,8 @@ class Program
                 deleted_nodes++;
             }
         }
-        //Imprimir matriz A
-        
+        //Imprimir matriz mod_A
+        /*
         Console.WriteLine("\nMatriz mod_A:");
         for (int i = 0; i < n; i++)
         {
@@ -193,7 +232,8 @@ class Program
             }
             Console.Write("\n");
         }
-        Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
+        */
+        //Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
         return mod_A;
     }
 

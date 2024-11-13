@@ -23,10 +23,8 @@ fi
 
 # Ejecuta el .exe con mono
 echo "Ejecutando $exe_file..."
-if [ -n "$2" ]; then
-    mono "$exe_file" $2
-else
-    mono "$exe_file"
+
+mono "$exe_file"
         
 fi
 if [ $? -ne 0 ]; then
@@ -46,8 +44,8 @@ if [ -f "$gnuplot_script" ]; then
     if [ -n "$2" ]; then
         gnuplot_arg="filename='$2.csv'"
     else
-        gnuplot_arg="filename='default.csv'"
-        
+        echo "No se encontró el archivo filename para gnuplot."
+        exit 1
     fi
     echo "Ejecutando gnuplot con el archivo $csv_file..."
     gnuplot -e "$gnuplot_arg" "$gnuplot_script"
