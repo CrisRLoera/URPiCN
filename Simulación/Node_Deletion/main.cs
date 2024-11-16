@@ -11,46 +11,6 @@ class Program
 
         double running_times = 20;
 
-        double delta_inct = 100;
-
-        if (args.Length > 0)
-        {
-            if (!string.IsNullOrEmpty(args[0]))
-            {
-                double.TryParse(args[1], out delta_inct);
-            }
-            if (!string.IsNullOrEmpty(args[1]))
-            {
-                double.TryParse(args[1], out running_times);
-            }
-        }
-
-        for(int i = 0; i < running_times; i++)
-        {
-            using (StreamWriter writer = new StreamWriter($"total_{i}.csv"))
-            {
-                double delta_sum = 0.0;
-                double avrg = 0.0;
-                for(int j = 0; j <= delta_inct;j++)
-                {
-                    avrg = Run_program(delta_sum);
-                    writer.WriteLine($"{avrg},{delta_sum}");
-                    delta_sum += (1/delta_inct);
-                }
-            }
-            Console.WriteLine($"Se termino la ejecución: {i}");
-        }
-        stopwatch.Stop();
-        Console.WriteLine($"Tiempo de ejecución: {stopwatch.Elapsed.TotalSeconds} segundos");
-    }
-
-    static double Run_program(double delta)
-    {
-        double f_n = delta;
-        //Console.WriteLine($"Delta:{f_n}");
-        double inct = 1000.0;
-        double h = 25.0 / (inct - 1.0);
-        
         // Importamos el dataset y lo almacenados en M de la forma exacta a la matriz del archivo
         string filePath = "/home/crisdev/Escritorio/UACH/ProyectoUACH/Datasets/Anemona-fish-26-10";
         double[][] M = File.ReadAllLines(filePath)
@@ -68,7 +28,7 @@ class Program
         // Definir los N y los M
         int n = M.Length; // Número de filas - plantas
         int m = M[0].Length; // Número de columnas - polinisadores
-
+        double delta_inct = n; // Delta_inct va a ser el número de nodos ya que son las veces que eliminamos nodos
         // Imprimir la matriz M
         /*
         for(int i = 0; i < n ; i++ )
@@ -84,28 +44,66 @@ class Program
         //Console.WriteLine("Se creó la matriz M");
 
         //Console.WriteLine($"Plantas: {n}");
+
+        double[,] A_ori = CalcularMatrizA(M, n,m);
+
+        for(int i = 0; i < running_times; i++)
+        {
+            double[,] A = new double[n, n];
+            Array.Copy(A_ori, A, A_ori.Length);
+
+            List<int> Ord = Enumerable.Range(0, n).ToList(); // Lista de orden de eliminación
+            Ord = GenerarOrdenEliminacion(Ord);
+            Console.WriteLine($"Orden de eliminación: {string.Join(", ", Ord)}"); // Imprimir la lista en consola
+            double delta_sum = 0.0;
+            using (StreamWriter writer = new StreamWriter($"total_{i}.csv"))
+            {
+                double avrg = 0.0;
+                for(int j = 0; j < delta_inct;j++)
+                {
+                    avrg = Run_program(delta_sum,n,m,A);
+                    Console.WriteLine($"Promedio: {avrg}, Suma Delta: {delta_sum}"); // Imprimir los valores
+                    writer.WriteLine($"{avrg},{delta_sum}");
+                    delta_sum += (1/delta_inct);
+                    A = EliminarNodosA(A, Ord, j);
+                }
+
+            }
+            Console.WriteLine($"Se termino la ejecución: {i}");
+            
+
+            //Imprimir matriz A
+            /*
+            Console.WriteLine("\nMatriz A:");
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    Console.Write($"{A[i,j]:F4}\t");
+                }
+                Console.Write("\n");
+            }*/
+        }
+        stopwatch.Stop();
+        Console.WriteLine($"Tiempo de ejecución: {stopwatch.Elapsed.TotalSeconds} segundos");
+    }
+
+    static double Run_program(double delta, int n_in, int m_in, double[,] A_in)
+    {
+        double f_n = delta;
+        double[,] A = A_in;
+        //Console.WriteLine($"Delta:{f_n}");
+        double inct = 1000.0;
+        double h = 25.0 / (inct - 1.0);
+        
+        int n = n_in; // Número de filas - plantas
+        int m = m_in; // Número de columnas - polinisadores
         
         // Vector de condiciones iniciales
         List<double[]> X0_cond = new List<double[]>();
         // X_H = 6.0 Y X_L = 0.001
 
-        X0_cond.Add(Enumerable.Repeat(6.0, n).ToArray());
-
-        double[,] A = CalcularMatrizA(M, n,m);
-
-        A = EliminarNodosA(A, f_n, n);
-
-        //Imprimir matriz A
-        /*
-        Console.WriteLine("\nMatriz A:");
-        for (int i = 0; i < n; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                Console.Write($"{A[i,j]:F4}\t");
-            }
-            Console.Write("\n");
-        }*/
+        X0_cond.Add(Enumerable.Repeat(0.001, n).ToArray());
 
         // Constantes para la ecuación diferencial
         double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
@@ -202,24 +200,35 @@ class Program
         return A;
     }
 
-    static double[,] EliminarNodosA(double[,] A, double f_n, int n)
+    static List<int> GenerarOrdenEliminacion(List<int> indx_list)
     {
-        int deleted_nodes = 0;
-        double[,] mod_A = A;
+        List<int> schuffled = new List<int>();
         Random random = new Random((int)DateTime.Now.Ticks);
-        for(int i = 0; i < n;i++)
+
+        // Crear una copia de la lista original para no modificarla
+        List<int> tempList = new List<int>(indx_list);
+
+        while (tempList.Count > 0)
         {
-            double px_i = random.NextDouble();
-            //Console.WriteLine($"Probabilidad obtenida: {px_i}, f_n: {f_n}"); // Imprimir la probabilidad obtenida contra f_n
-            if(px_i < f_n)
-            {
-                for(int j = 0; j < n;j++)
-                {
-                    mod_A[i,j]=0;
-                    mod_A[j,i]=0;
-                }
-                deleted_nodes++;
-            }
+            // Elegir un índice aleatorio
+            int index = random.Next(tempList.Count);
+            // Quitar el número aleatorio y agregarlo a schuffled
+            schuffled.Add(tempList[index]);
+            tempList.RemoveAt(index);
+        }
+
+        return schuffled;
+    }
+
+    static double[,] EliminarNodosA(double[,] A, List<int> ord, int index)
+    {
+        double[,] mod_A = new double[A.GetLength(0), A.GetLength(1)];
+        Array.Copy(A, mod_A, A.Length);
+        int n = A.GetLength(0);
+        for(int j = 0; j < n;j++)
+        {
+            mod_A[ord[index],j]=0;
+            mod_A[j,ord[index]]=0;
         }
         //Imprimir matriz mod_A
         /*
