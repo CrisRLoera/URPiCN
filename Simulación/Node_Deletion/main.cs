@@ -47,25 +47,35 @@ class Program
 
         double[,] A_ori = CalcularMatrizA(M, n,m);
 
-        for(int i = 0; i < running_times; i++)
+        double[] list_xi = new double[] { 0.001, 6.0 };
+
+        for(int i = 0; i <= running_times; i++)
         {
             double[,] A = new double[n, n];
             Array.Copy(A_ori, A, A_ori.Length);
 
             List<int> Ord = Enumerable.Range(0, n).ToList(); // Lista de orden de eliminación
             Ord = GenerarOrdenEliminacion(Ord);
-            Console.WriteLine($"Orden de eliminación: {string.Join(", ", Ord)}"); // Imprimir la lista en consola
+            //Console.WriteLine($"Orden de eliminación: {string.Join(", ", Ord)}"); // Imprimir la lista en consola
             double delta_sum = 0.0;
-            using (StreamWriter writer = new StreamWriter($"total_{i}.csv"))
+            using (StreamWriter writer_L = new StreamWriter($"total_{i}_L.csv"))
+            using (StreamWriter writer_H = new StreamWriter($"total_{i}_H.csv"))
             {
-                double avrg = 0.0;
-                for(int j = 0; j < delta_inct;j++)
+                double avrg_L = 0.0;
+                double avrg_H = 0.0;
+                for(int j = 0; j <= delta_inct;j++)
                 {
-                    avrg = Run_program(delta_sum,n,m,A);
-                    Console.WriteLine($"Promedio: {avrg}, Suma Delta: {delta_sum}"); // Imprimir los valores
-                    writer.WriteLine($"{avrg},{delta_sum}");
+                    avrg_L = Run_program(delta_sum,n,m,A,list_xi[0]);
+                    avrg_H = Run_program(delta_sum,n,m,A,list_xi[1]);
+                    Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
+                    Console.WriteLine($"Promedio: {avrg_H}, Suma Delta: {delta_sum}"); // Imprimir los valores
+                    writer_L.WriteLine($"{avrg_L},{delta_sum}");
+                    writer_H.WriteLine($"{avrg_H},{delta_sum}");
                     delta_sum += (1/delta_inct);
-                    A = EliminarNodosA(A, Ord, j);
+                    if (j < Ord.Count) // Verificar si hay más nodos para eliminar
+                    {
+                        A = EliminarNodosA(A, Ord, j);
+                    }
                 }
 
             }
@@ -88,7 +98,7 @@ class Program
         Console.WriteLine($"Tiempo de ejecución: {stopwatch.Elapsed.TotalSeconds} segundos");
     }
 
-    static double Run_program(double delta, int n_in, int m_in, double[,] A_in)
+    static double Run_program(double delta, int n_in, int m_in, double[,] A_in, double xi)
     {
         double f_n = delta;
         double[,] A = A_in;
@@ -103,7 +113,7 @@ class Program
         List<double[]> X0_cond = new List<double[]>();
         // X_H = 6.0 Y X_L = 0.001
 
-        X0_cond.Add(Enumerable.Repeat(0.001, n).ToArray());
+        X0_cond.Add(Enumerable.Repeat(xi, n).ToArray());
 
         // Constantes para la ecuación diferencial
         double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
