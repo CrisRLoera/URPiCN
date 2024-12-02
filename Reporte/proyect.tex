@@ -22,6 +22,7 @@
 \usepackage{eso-pic}
 \usepackage{lipsum}
 \usepackage{fancyhdr}
+\usepackage{float}
 %\usepackage[firstpage]{draftwatermark
 %\usepackage[doublespace]{setspace}  
 
@@ -105,10 +106,10 @@ Laboratorio de Sistemas Complejos}}
 
 
 Con base en la información suplementaria del artículo~\cite{gao2016universal}.
-Como matriz de interacción para la simulación se tomó la siguiente matriz de $26 \times 10$ de un ecosistema de anemonas y peces (por simplicidad, se refiere estas interacciones como plantas y polinizadores respectivamente, estos roles se mantienen para los demás ecosistemas con redes mutualistas):
+Como matriz de interacción para la simulación se tomó la siguiente matriz de $26 \times 10$ de un ecosistema de peces y anémonas (por simplicidad, se refiere estas interacciones como polinizadores y plantas respectivamente, estos roles se mantienen para los demás ecosistemas con redes mutualistas):
 
 \begin{equation*}
-M_{nm}=\begin{vmatrix}
+M_{mn}=\begin{vmatrix}
 1&1&1&1&1&1&1&1&1&1\\
 1&1&1&1&1&1&1&0&0&0\\
 1&1&1&1&1&0&1&1&0&0\\
@@ -140,9 +141,9 @@ M_{nm}=\begin{vmatrix}
 
 
 
-Partiendo de una matriz de interacción $M_{nm}$ donde $n$ consiste en las plantas y $m$ en los polinizadores, se requiere crear una matriz $A$ dada por: $
+Partiendo de una matriz de interacción $M_{mn}$ donde $n$ consiste en las plantas y $m$ en los polinizadores, se requiere crear una matriz $A$ dada por: $
 A_{ij}=\sum^m_{k=1}\frac{M_{ik}M_{jk}}{\sum^n_{s=1}M_{sk}}
-$ para la siguiente ecuación.
+$ para la siguiente ecuación. Puesto que nos interesa modelar la resiliencia de las plantas utilizamos la matriz transpuesta de $M_{mn}^T$ siendo ahora la matriz que utilizaremos la matriz $M_{nm}$.
 
 Ahora podemos resolver la ecuación siguiente, cuya simulación numérica fue realizada usando Runge-Kutta de cuarto orden~\cite{numerical2002recipes}:
 
@@ -162,31 +163,38 @@ E_{i}&=&E=0.9,\\
 H_{j}&=&H=0.1\ .
 \end{eqnarray*}
 
-En la ejecución se define a cada $x_{i}(0)=10^{-3}$.En la figura~\ref{fig-sol} se puede observar como las 10 trayectorias simuladas crecen hasta llegar a un punto estable.
+En el articulo se utilizan dos estados iniciales $x_{i}(0)=10^{-3}$ y $x_{i}(0)=6.0$, llamados estado inicial bajo($x^{L}$) y estado inicial alto($x^{H}$) .En la figura~\ref{fig-sol-all} se puede observar como las 10 trayectorias simuladas crecen hasta llegar a un punto estable, en este caso usando el estado inicial bajo.
 
-\begin{figure}[hb]
+\begin{figure}[H]
 \label{fig-sol-all}
 \includegraphics[width=10cm, height=10cm]{output_plot_all.png}
-\caption{En esta imagen se puede apreciar el crecimiento de las poblaciones en cada iteración de los $n$ polinizadores en la red, de acuerdo con la ecuación diferencial.No se graficó más allá de la iteración 700, ya que a partir de ese punto las poblaciones se estabilizan.}
+\caption{En esta imagen se puede apreciar el crecimiento de las poblaciones en cada iteración de los $n$ polinizadores en la red, de acuerdo con la ecuación diferencial. No se graficó más allá de la iteración 700, ya que a partir de ese punto las poblaciones se estabilizan.}
 \end{figure}
 
-Llegado a estos resultados se grafico la media de todas las $x_i$ a lo largo de las iteraciones para observar el comportamiento global del sistema.
+Llegado a estos resultados se graficó la media de todas las $x_i$ a lo largo de las iteraciones para observar el comportamiento global del sistema.
 
-\begin{figure}[hb]
+\begin{figure}[H]
 \label{fig-sol}
 \includegraphics[width=10cm, height=10cm]{output_plot.png}
-\caption{Aquí el crecimiento logistico sigue siendo representativo del sistema y al igual que en el anterior llega a un punto estable a partir de la iteracción 600.}
+\caption{Aquí se puede observar la media del crecimiento de la población de las $x_{i}$ especies de plantas, al igual que en el anterior llega a un punto estable a partir de la iteración 600.}
 \end{figure}
 
-Una vez que se tiene este caso base del cual partir para las diferentes perturvaciones se comenzo por eliminar nodos.Los cuales tienen una fraccion $f_{n}$ de probabilidad de ser eliminados de la matris $A_{ij}$.
+Una vez que se tiene el crecimiento de la población sin ninguna perturbación, a partir de esta simulación se desarrollan las diferentes perturbaciones.
 
-Comparando las medias de las $x_{i}$ con las fracciones
+\section{Eliminación de nodos}
 
 
+La eliminación de nodos consiste en secuencialmente ir eliminando una fracción $f_{n}$ de nodos en $N$ pasos, para lo cual se selecciona un nodo no eliminado aún de la matriz $A_{ij}$ las interacciones de este nodo se vuelven 0 de manera que no aporte al sistema.
+\begin{figure}[H]
+     \label{fig-n-del}
+     \includegraphics[width=10cm, height=10cm]{output_plot_x_fn_Two.png}
+     \caption{Aquí se muestran 20 ejecuciones del programa con un $f_{n}=\frac{1}{10}$, en la parte de arriba de la gráfica se tienen los puntos obtenidos al ejecutar el programa con un estado inicial $x^{H}$ mientras que los puntos que caen a casi 0 son los correspondientes a $x^{L}$.}
+     \end{figure}
 
-        
 \bibliographystyle{unsrt}
 \bibliography{bibliografia} 
 %\printbibliography 
 \end{document}
+
+
 

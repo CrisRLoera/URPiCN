@@ -13,21 +13,33 @@ class Program
 
         // Importamos el dataset y lo almacenados en M de la forma exacta a la matriz del archivo
         string filePath = "/home/crisdev/Escritorio/UACH/ProyectoUACH/Datasets/Anemona-fish-26-10";
-        double[][] M = File.ReadAllLines(filePath)
+        double[][] tempM = File.ReadAllLines(filePath)
             .Where(line => !string.IsNullOrWhiteSpace(line))
             .Select(line => line.Split('\t')
                 .Select(num => double.Parse(num))
                 .ToArray())
             .ToArray();
 
+        // Convertir de double[][] a double[,]
+        int n = tempM.Length;
+        int m = tempM[0].Length;
+        double[,] M_ori = new double[m, n];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                M_ori[j, i] = tempM[i][j];
+            }
+        }
+
         /*  Se invierten las filas y las columnas para que la matriz quede de a forma n x m, donde
-            n son las plantas y m los polinisadore 
+            n son las plantas y m los polinisadores 
         */
-        M = M[0].Select((_, i) => M.Select(row => row[i]).ToArray()).ToArray();     
+        //M = M[0].Select((_, i) => M.Select(row => row[i]).ToArray()).ToArray();
 
         // Definir los N y los M
-        int n = M.Length; // Número de filas - plantas
-        int m = M[0].Length; // Número de columnas - polinisadores
+        n = M_ori.GetLength(0); // Número de filas - plantas
+        m = M_ori.GetLength(1); // Número de columnas - polinisadores
         double delta_inct = n; // Delta_inct va a ser el número de nodos ya que son las veces que eliminamos nodos
         // Imprimir la matriz M
         /*
@@ -45,14 +57,18 @@ class Program
 
         //Console.WriteLine($"Plantas: {n}");
 
-        double[,] A_ori = CalcularMatrizA(M, n,m);
+        //double[,] A_ori = CalcularMatrizA(M_ori, n,m);
+        double[,] A_ori = new double[n, n];
 
         double[] list_xi = new double[] { 0.001, 6.0 };
 
         for(int i = 0; i <= running_times; i++)
         {
             double[,] A = new double[n, n];
+            double[,] M = new double[n, m];
             Array.Copy(A_ori, A, A_ori.Length);
+            
+            Array.Copy(M_ori, M, M_ori.Length);
 
             List<int> Ord = Enumerable.Range(0, n).ToList(); // Lista de orden de eliminación
             Ord = GenerarOrdenEliminacion(Ord);
@@ -65,6 +81,7 @@ class Program
                 double avrg_H = 0.0;
                 for(int j = 0; j <= delta_inct;j++)
                 {
+                    A = CalcularMatrizA(M, n,m);
                     avrg_L = Run_program(delta_sum,n,m,A,list_xi[0]);
                     avrg_H = Run_program(delta_sum,n,m,A,list_xi[1]);
                     Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
@@ -74,7 +91,9 @@ class Program
                     delta_sum += (1/delta_inct);
                     if (j < Ord.Count) // Verificar si hay más nodos para eliminar
                     {
-                        A = EliminarNodosA(A, Ord, j);
+                        //A = EliminarNodosA(A, Ord, j);
+                        M = EliminarNodosM(M,Ord,j);
+                        
                     }
                 }
 
@@ -164,7 +183,7 @@ class Program
     }
 
     
-    static double[,] CalcularMatrizA(double[][] M,int n_length,int m_length)
+    static double[,] CalcularMatrizA(double[,] M,int n_length,int m_length)
     {
         int n = n_length;
         int m = m_length;
@@ -177,7 +196,7 @@ class Program
 
             for (int s = 0; s < n; s++)
             {
-                denominator += M[s][k];
+                denominator += M[s,k];
             }
             M_sum[k]=denominator;
         }
@@ -198,7 +217,7 @@ class Program
 
                 for (int k = 0; k < m; k++)
                 {
-                    double numerator = M[i][k] * M[j][k];
+                    double numerator = M[i,k] * M[j,k];
 
                     sum_k += numerator / M_sum[k];
                 }
@@ -206,7 +225,19 @@ class Program
                 A[i, j] = sum_k;
             }
         }
-        //Console.WriteLine("Se creó la matriz A");
+        Console.WriteLine("Se creó la matriz A");
+
+        // Imprimir matriz A
+        Console.WriteLine("Matriz A:");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                Console.Write($"{A[i,j]:F4}\t");
+            }
+            Console.WriteLine();
+        }
+
         return A;
     }
 
@@ -254,6 +285,38 @@ class Program
         */
         //Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
         return mod_A;
+    }
+
+    static double[,] EliminarNodosM(double[,] M, List<int> ord, int index)
+    {
+        double[,] mod_M = new double[M.GetLength(0), M.GetLength(1)];
+        for (int i = 0; i < M.GetLength(0); i++)
+        {
+            for (int j = 0; j < M.GetLength(1); j++)
+            {
+                mod_M[i, j] = M[i, j];
+            }
+        }
+        int n = M.GetLength(0);
+        int m = M.GetLength(1);
+        for(int j = 0; j < m;j++)
+        {
+            mod_M[ord[index],j]=0;
+        }
+        //Imprimir matriz mod_M
+        /*
+        Console.WriteLine("\nMatriz mod_M:");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                Console.Write($"{mod_M[i,j]:F1} ");
+            }
+            Console.Write("\n");
+        }
+        */
+        //Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
+        return mod_M;
     }
 
     static void rk4(double[] y, double[] dydx, int n, double x, double h, double[] yout, Action<double, double[], double[]> derivs)
