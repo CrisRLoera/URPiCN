@@ -1,123 +1,128 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
+using System.Threading;
 
-class Dendrogram
-{
-    static void Main(string[] args)
-    {
+class Dendograma2 {
+    public static void Main(string[] args) {
+        int n = 0;
+        int N = 0;
         int t = 0;
-        int existing_species = 0;
+        int gap = 20;
         int limit_species = 20;
+        Species[] species = new Species[limit_species];
+        species[0] = new Species(t,null);
+        species[0].id = N;
+        Species root = species[0];
+        n++;
+        while(n < limit_species) {
+            Species[] speciesCopy = species.Clone() as Species[];
+            for (int i = 0; i < limit_species ; i++) {
+                if (speciesCopy[i] != null) {
+                    //Console.WriteLine($"ESpecie{i}");
+                    //Console.WriteLine($"Case1");
+                    if (speciesCopy[i].created_sons == 0) {
+                        if (t == speciesCopy[i].first_son_creation_time && n < limit_species) {    
+                            //Console.WriteLine($"Creando primer hijo en {i}");
+                            species[i] = speciesCopy[i].CreateFirst(t);
+                            speciesCopy[i].created_sons = speciesCopy[i].created_sons + 1;
+                            N++;
+                            species[i].id = N;
+                        }
+                    }
+                    //Console.WriteLine($"Case2");
+                    if (speciesCopy[i].father != null) {    
+                        if (speciesCopy[i].father.created_sons == 1) {
+                            if (t == speciesCopy[i].father.second_son_creation_time && n < limit_species) {
+                                //Console.WriteLine($"Creando segundo hijo en {i}:{n}");
+                                species[n] = speciesCopy[i].father.CreateSecond(t);                                
+                                N++;
+                                species[n].id = N;
+                                n++;
+                                speciesCopy[i].father.created_sons = speciesCopy[i].father.created_sons + 1;
+                            }
+                        }
+                    }
+                }
+            }
+            Console.WriteLine($"Tiempo actual: {t}");
+            //Thread.Sleep(1000);
+            t++;
+            Console.WriteLine($"Número de especies: {n}");
 
-        Species[] species = new Species[20];
+            Console.WriteLine($"root: {root.creation_time}");
+            
+        }
+        Console.WriteLine($"Número total de nodos en el árbol: {root.ContarNodos()}");
+        for (int i = 0; i < limit_species; i++) {
+            Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+        }
+        int[,] M = new int[limit_species,limit_species];
+        for (int i = 0; i < limit_species ; i++) {
+            for (int j = 0; j < limit_species; j++) {
+                if(i != j) {
+                    Species fix = species[i];
+                    Species pointer = species[j];
+                    bool isTheSame = false;
+                    while(isTheSame != true) {
+                        if (fix.father == pointer.father) {
+                            isTheSame = true;
+                        } 
+                        if(pointer.father == null) {
+                            fix = fix.father;
+                        } else {
+                            pointer = pointer.father;
+                        }
+                    }
+                    M[i,j] = (species[i].creation_time - pointer.creation_time) + (species[j].creation_time - pointer.creation_time) - gap;
 
-        // Crear una instancia de la clase Random
+                } else {
+                    M[i,j] = 0;
+                }
+            }
+        }
+
+        // Imprimir la matriz M
+        Console.WriteLine("Matriz M:");
+        for (int i = 0; i < limit_species; i++) {
+            for (int j = 0; j < limit_species; j++) {
+                Console.Write(M[i, j] + " "); // Imprimir cada elemento seguido de una tabulación
+            }
+            Console.WriteLine(); // Nueva línea al final de cada fila
+        }
+    }
+}
+
+class Species {
+    public int id;
+    public int creation_time;
+    public Species father;
+    public Species first_son = null;
+    public int first_son_creation_time;
+    public Species second_son = null;
+    public int second_son_creation_time;
+    public int lambda_sons = 5;
+    public int created_sons = 0;
+
+    public Species(int tiempo, Species father) {
+        this.creation_time = tiempo;
+        this.father = father;
+        int temp1 = tiempo + GenerarPoisson(this.lambda_sons);
+        int temp2 = tiempo + GenerarPoisson(this.lambda_sons);
+        if (temp1 < temp2) {
+            this.first_son_creation_time = temp1;
+            this.second_son_creation_time = temp2;
+        } else {
+            this.first_son_creation_time = temp2;
+            this.second_son_creation_time = temp1;
+        }
+        Console.WriteLine("Una nueva especie nacio en el tiempo:" + tiempo);
+        Console.WriteLine($"Número generado para el primer hijo: {this.first_son_creation_time}");
+        Console.WriteLine($"Número generado para el segundo hijo: {this.second_son_creation_time}");
+    }
+
+    static int GenerarPoisson(double lambda)
+    {
         Random random = new Random();
 
-        // Generar un número aleatorio entre 0 y 1
-        double p = random.NextDouble();
-        
-        species[existing_species] = new Species(t);
-        do
-        {
-            // Iterar sobre las especies existentes
-            existing_species = CountSpecies(species);
-            t++;
-            // Crear una lista clon de species
-            List<Species> speciesClon = new List<Species>(species.Where(s => s != null)); // Clonar solo las especies no nulas
-            for (int i = 0; i < speciesClon.Count; i++)
-            {
-                var especie = speciesClon[i];
-                p = random.NextDouble();
-                Console.WriteLine($"Índice de la especie en speciesClon: {i}, Probabilidad de la especie: {p:F7}"); // Mostrar el índice y la probabilidad
-                if (p < 0.2 && existing_species < limit_species)
-                {
-                    species[existing_species] = new Species(t);
-                    existing_species++; // Asegúrate de incrementar existing_species
-                }
-            }
-        } while (existing_species < limit_species);
-        
-        // Crear un diccionario para agrupar especies por tiempo
-        Dictionary<int, List<Species>> especiesPorTiempo = new Dictionary<int, List<Species>>();
-
-        // Iterar sobre cada especie en el arreglo
-        foreach (var especie in species)
-        {
-            if (especie != null) // Verificar que la especie no sea nula
-            {
-                int tiempo = especie.GetTiempo(); // Obtener el tiempo de creación
-                if (!especiesPorTiempo.ContainsKey(tiempo))
-                {
-                    especiesPorTiempo[tiempo] = new List<Species>(); // Inicializar la lista si no existe
-                }
-                especiesPorTiempo[tiempo].Add(especie); // Agregar la especie a la lista correspondiente
-            }
-        }
-
-        // Imprimir las especies agrupadas por tiempo
-        foreach (var kvp in especiesPorTiempo)
-        {
-            Console.WriteLine($"Tiempo {kvp.Key}: {kvp.Value.Count} especies");
-            foreach (var especie in kvp.Value)
-            {
-                Console.WriteLine($" - Especie creada en el tiempo: {especie.GetTiempo()}");
-            }
-        }
-
-        // Llamar a la función para generar números de Poisson y guardar en CSV
-        GenerarDatosPoisson("test.csv", 500, 5); // 5 es el valor de lambda
-    }
-
-    // Método para contar instancias de Species
-    static int CountSpecies(Species[] species)
-    {
-        int count = 0;
-        foreach (var s in species)
-        {
-            if (s != null) count++;
-        }
-        return count;
-    }
-
-    // Nueva función para generar números de Poisson y guardar en un archivo CSV
-    static void GenerarDatosPoisson(string filePath, int cantidad, double lambda)
-    {
-        // Crear un diccionario para contar las frecuencias
-        Dictionary<int, int> frecuencias = new Dictionary<int, int>();
-
-        using (StreamWriter writer = new StreamWriter(filePath))
-        {
-            writer.WriteLine("Número,Frecuencia"); // Escribir encabezado en el CSV
-            Random random = new Random();
-            for (int i = 0; i < cantidad; i++)
-            {
-                int numero = GenerarPoisson(lambda, random);
-                
-                // Contar la frecuencia del número
-                if (frecuencias.ContainsKey(numero))
-                {
-                    frecuencias[numero]++;
-                }
-                else
-                {
-                    frecuencias[numero] = 1;
-                }
-            }
-
-            // Escribir los números y sus frecuencias en el archivo
-            foreach (var kvp in frecuencias)
-            {
-                writer.WriteLine($"{kvp.Key},{kvp.Value}"); // Escribir el número y su frecuencia
-            }
-        }
-    }
-
-    // Función para generar un número aleatorio de Poisson
-    static int GenerarPoisson(double lambda, Random random)
-    {
         double L = Math.Exp(-lambda);
         int k = 0;
         double p = 1.0;
@@ -128,51 +133,32 @@ class Dendrogram
             p *= random.NextDouble();
         } while (p > L);
 
-        return k - 1; // Decrementar k para obtener el número de Poisson
+        return k - 1;
     }
 
-}
-
-class Species
-{
-    private int tiempo;
-
-    public Species(int tiempo)
-    {
-        this.tiempo = tiempo;
-        Console.WriteLine("Una nueva especie nacio en el tiempo:" + tiempo);
+    public Species CreateFirst(int t){
+        this.first_son = new Species(this.first_son_creation_time,this);
+        return this.first_son;
     }
 
-    // Nueva función que devuelve una probabilidad
-    public double CalcularProbabilidad(int intervalo)
-    {
-        double lambda = tiempo; // Usamos el tiempo como lambda
-        int k = 2; // Queremos la probabilidad de que X sea 2
-        double probabilidad = (Math.Exp(-lambda) * Math.Pow(lambda, k)) / Factorial(k);
-        return probabilidad;
+    public Species CreateSecond(int t){
+        this.second_son = new Species(this.second_son_creation_time,this);
+        return this.second_son;
     }
 
-    // Método para calcular el factorial
-    private int Factorial(int n)
+    // Método para contar nodos
+    public int ContarNodos()
     {
-        if (n == 0) return 1;
-        int resultado = 1;
-        for (int i = 1; i <= n; i++)
+        int count = 1; // Contar el nodo actual
+        if (first_son != null)
         {
-            resultado *= i;
+            count += first_son.ContarNodos(); // Contar el hijo izquierdo
         }
-        return resultado;
-    }
-
-    public int GetTiempo()
-    {
-        return tiempo;
+        if (second_son != null)
+        {
+            count += second_son.ContarNodos(); // Contar el hijo derecho
+        }
+        return count;
     }
 }
 
-
-// Encontrar
-
-//Funcion de densidad de probabilidad con 500 numeros sacar un histograma pasa que se vea que es una distribucion poassoniana
-// First Course of probability
-// Sheldon Ross, Models of random, random models
