@@ -6,8 +6,8 @@ class Dendograma2 {
         int n = 0;
         int N = 0;
         int t = 0;
-        int gap = 20;
-        int limit_species = 20;
+        int gap = 0;
+        int limit_species = 5;
         Species[] species = new Species[limit_species];
         species[0] = new Species(t,null);
         species[0].id = N;
@@ -53,25 +53,44 @@ class Dendograma2 {
         }
         Console.WriteLine($"Número total de nodos en el árbol: {root.ContarNodos()}");
         for (int i = 0; i < limit_species; i++) {
-            Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+            if (species[i].father != null) {
+                Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+                Console.WriteLine($"El padre es {species[i].father.creation_time}:{species[i].father.id}");
+            } else {
+                Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+                Console.WriteLine($"El padre es null");
+            }
         }
         int[,] M = new int[limit_species,limit_species];
         for (int i = 0; i < limit_species ; i++) {
+            Console.WriteLine($"> Especie {i}");
             for (int j = 0; j < limit_species; j++) {
                 if(i != j) {
                     Species fix = species[i];
                     Species pointer = species[j];
                     bool isTheSame = false;
                     while(isTheSame != true) {
-                        if (fix.father == pointer.father) {
+                        //Console.WriteLine($"fix:{fix.id} pointer:{pointer.id}");
+                        if (fix == pointer && pointer !=null) {
                             isTheSame = true;
-                        } 
-                        if(pointer.father == null) {
-                            fix = fix.father;
-                        } else {
-                            pointer = pointer.father;
+                        }
+                        if (isTheSame!= true) {
+                            if(pointer.father == null) {
+                                if(fix.father != null) {
+                                    fix = fix.father;
+                                    pointer = species[j];
+                                    //Console.WriteLine("Not fund");
+                                }
+                                else {
+                                    Console.WriteLine("Fatal error");
+                                }
+                            } else {
+                                pointer = pointer.father;
+                            }
                         }
                     }
+                    Console.WriteLine($"{i}:{species[i].creation_time} + {j}:{species[j].creation_time} - {gap}");
+                    Console.WriteLine($"father:{fix.creation_time}");
                     M[i,j] = (species[i].creation_time - pointer.creation_time) + (species[j].creation_time - pointer.creation_time) - gap;
 
                 } else {
@@ -88,6 +107,70 @@ class Dendograma2 {
             }
             Console.WriteLine(); // Nueva línea al final de cada fila
         }
+
+        bool exitCondition = false;
+        Species positionCurrent = root;
+
+        while(exitCondition != true) {
+            Console.WriteLine("Menu:");
+            Console.WriteLine(" ");
+            Console.WriteLine("1: Izquierda");
+            Console.WriteLine("2: Derecha");
+            Console.WriteLine("3: Arriba");
+            Console.WriteLine(" ");
+            Console.WriteLine("Datos del nodo:");
+            
+            Console.WriteLine($"id:{positionCurrent.id}");
+            Console.WriteLine($"creation:{positionCurrent.creation_time}");
+            
+            Console.WriteLine("Padre");
+            if (positionCurrent.father != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.father.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.father.id}");
+            } else {
+                Console.WriteLine("    No existe padre");
+            }
+            Console.WriteLine("Hijo izquierdo");
+            if (positionCurrent.first_son != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.first_son.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.first_son.id}");
+            } else {
+                Console.WriteLine("    No existe hijo");
+            }
+            Console.WriteLine("Hijo derecho");
+            if (positionCurrent.second_son != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.second_son.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.second_son.id}");
+            } else {
+                Console.WriteLine("    No existe hijo");
+            }
+            
+            string option = Console.ReadLine();
+
+            if(option == "1" ) {
+                if (positionCurrent.first_son != null) {
+                    positionCurrent = positionCurrent.first_son;
+                } else {
+                    Console.WriteLine("No existe hijo a la izquierda");
+                }
+            } else if (option == "2") {
+                if (positionCurrent.second_son != null) {
+                    positionCurrent = positionCurrent.second_son;
+                } else {
+                    Console.WriteLine("No existe hijo a la derecha");
+                }               
+            } else if (option == "3") {
+                if (positionCurrent.father == null){
+                    Console.WriteLine("No existe un padre");
+                } else {
+                    positionCurrent = positionCurrent.father;
+                }
+            }
+            else if (option == "e") {
+                exitCondition = true;
+            }
+        }
+        Console.WriteLine("Saliendo del programa");
     }
 }
 
@@ -105,8 +188,8 @@ class Species {
     public Species(int tiempo, Species father) {
         this.creation_time = tiempo;
         this.father = father;
-        int temp1 = tiempo + GenerarPoisson(this.lambda_sons);
-        int temp2 = tiempo + GenerarPoisson(this.lambda_sons);
+        int temp1 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+        int temp2 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
         if (temp1 < temp2) {
             this.first_son_creation_time = temp1;
             this.second_son_creation_time = temp2;
