@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,9 +10,183 @@ class Program
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
+        int nm = 0;
+        int N = 0;
+        int t = 0;
+        int gap = 50;
+        int limit_species = 20;
+        Species[] species = new Species[limit_species];
+        species[0] = new Species(t,null);
+        species[0].id = N;
+        Species root = species[0];
+        nm++;
+        while(nm < limit_species) {
+            Species[] speciesCopy = species.Clone() as Species[];
+            for (int i = 0; i < limit_species ; i++) {
+                if (speciesCopy[i] != null) {
+                    //Console.WriteLine($"ESpecie{i}");
+                    //Console.WriteLine($"Case1");
+                    if (speciesCopy[i].created_sons == 0) {
+                        if (t == speciesCopy[i].first_son_creation_time && nm < limit_species) {    
+                            //Console.WriteLine($"Creando primer hijo en {i}");
+                            species[i] = speciesCopy[i].CreateFirst(t);
+                            speciesCopy[i].created_sons = speciesCopy[i].created_sons + 1;
+                            N++;
+                            species[i].id = N;
+                        }
+                    }
+                    //Console.WriteLine($"Case2");
+                    if (speciesCopy[i].father != null) {    
+                        if (speciesCopy[i].father.created_sons == 1) {
+                            if (t == speciesCopy[i].father.second_son_creation_time && nm < limit_species) {
+                                //Console.WriteLine($"Creando segundo hijo en {i}:{n}");
+                                species[nm] = speciesCopy[i].father.CreateSecond(t);                                
+                                N++;
+                                species[nm].id = N;
+                                nm++;
+                                speciesCopy[i].father.created_sons = speciesCopy[i].father.created_sons + 1;
+                            }
+                        }
+                    }
+                }
+            }
+            //Console.WriteLine($"Tiempo actual: {t}");
+            //Thread.Sleep(1000);
+            t++;
+            //Console.WriteLine($"Número de especies: {nm}");            
+        }
+        Console.WriteLine($"Número total de nodos en el árbol: {root.ContarNodos()}");
+        /*
+        for (int i = 0; i < limit_species; i++) {
+            if (species[i].father != null) {
+                Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+                Console.WriteLine($"El padre es {species[i].father.creation_time}:{species[i].father.id}");
+            } else {
+                Console.WriteLine($"La especie {i}:{species[i].id} fue creada en {species[i].creation_time}");
+                Console.WriteLine($"El padre es null");
+            }
+        }*/
+        double[,] MO = new double[limit_species,limit_species];
+        for (int i = 0; i < limit_species ; i++) {
+            //Console.WriteLine($"> Especie {i}");
+            for (int j = 0; j < limit_species; j++) {
+                if(i != j) {
+                    Species fix = species[i];
+                    Species pointer = species[j];
+                    bool isTheSame = false;
+                    while(isTheSame != true) {
+                        //Console.WriteLine($"fix:{fix.id} pointer:{pointer.id}");
+                        if (fix == pointer && pointer !=null) {
+                            isTheSame = true;
+                        }
+                        if (isTheSame!= true) {
+                            if(pointer.father == null) {
+                                if(fix.father != null) {
+                                    fix = fix.father;
+                                    pointer = species[j];
+                                    //Console.WriteLine("Not fund");
+                                }
+                                else {
+                                    Console.WriteLine("Fatal error");
+                                }
+                            } else {
+                                pointer = pointer.father;
+                            }
+                        }
+                    }
+                    //Console.WriteLine($"{i}:{species[i].creation_time} + {j}:{species[j].creation_time} - {gap}");
+                    //Console.WriteLine($"father:{fix.creation_time}");
+                    MO[i,j] = (species[i].creation_time - pointer.creation_time) + (species[j].creation_time - pointer.creation_time) - gap;
+
+                } else {
+                    MO[i,j] = 0;
+                }
+            }
+        }
+
+        // Imprimir la matriz M
+        /*
+        Console.WriteLine("Matriz M:");
+        for (int i = 0; i < limit_species; i++) {
+            for (int j = 0; j < limit_species; j++) {
+                Console.Write(MO[i, j] + " "); // Imprimir cada elemento seguido de una tabulación
+            }
+            Console.WriteLine(); // Nueva línea al final de cada fila
+        }
+        Thread.Sleep(5000);*/
+
+        /*
+        bool exitCondition = false;
+        Species positionCurrent = root;
+
+        while(exitCondition != true) {
+            Console.WriteLine("Menu:");
+            Console.WriteLine(" ");
+            Console.WriteLine("1: Izquierda");
+            Console.WriteLine("2: Derecha");
+            Console.WriteLine("3: Arriba");
+            Console.WriteLine(" ");
+            Console.WriteLine("Datos del nodo:");
+            
+            Console.WriteLine($"id:{positionCurrent.id}");
+            Console.WriteLine($"creation:{positionCurrent.creation_time}");
+            
+            Console.WriteLine("Padre");
+            if (positionCurrent.father != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.father.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.father.id}");
+            } else {
+                Console.WriteLine("    No existe padre");
+            }
+            Console.WriteLine("Hijo izquierdo");
+            if (positionCurrent.first_son != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.first_son.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.first_son.id}");
+            } else {
+                Console.WriteLine("    No existe hijo");
+            }
+            Console.WriteLine("Hijo derecho");
+            if (positionCurrent.second_son != null) {
+                Console.WriteLine($"    creacion:{positionCurrent.second_son.creation_time}");
+                Console.WriteLine($"    id:{positionCurrent.second_son.id}");
+            } else {
+                Console.WriteLine("    No existe hijo");
+            }
+            
+            string option = Console.ReadLine();
+
+            if(option == "1" ) {
+                if (positionCurrent.first_son != null) {
+                    positionCurrent = positionCurrent.first_son;
+                } else {
+                    Console.WriteLine("No existe hijo a la izquierda");
+                }
+            } else if (option == "2") {
+                if (positionCurrent.second_son != null) {
+                    positionCurrent = positionCurrent.second_son;
+                } else {
+                    Console.WriteLine("No existe hijo a la derecha");
+                }               
+            } else if (option == "3") {
+                if (positionCurrent.father == null){
+                    Console.WriteLine("No existe un padre");
+                } else {
+                    positionCurrent = positionCurrent.father;
+                }
+            }
+            else if (option == "e") {
+                exitCondition = true;
+            }
+        }
+        Console.WriteLine("Saliendo del programa");
+        */
+
+        // Main program
+
         double running_times = 20;
 
         // Importamos el dataset y lo almacenados en M de la forma exacta a la matriz del archivo
+        /*
         string filePath = "/home/crisdev/Escritorio/UACH/ProyectoUACH/Datasets/Anemona-fish-26-10";
         double[][] tempM = File.ReadAllLines(filePath)
             .Where(line => !string.IsNullOrWhiteSpace(line))
@@ -21,52 +196,51 @@ class Program
             .ToArray();
 
         // Convertir de double[][] a double[,]
-        int n = tempM.Length;
-        int m = tempM[0].Length;
-        double[,] M_ori = new double[n, m];
+        */
+        double[,] M_ori = MO;
+        int n = M_ori.GetLength(0);
+        int m = M_ori.GetLength(1);
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < m; j++)
             {
-                M_ori[i, j] = tempM[i][j];
+                M_ori[j, i] = MO[i,j];
             }
         }
 
         /*  Se invierten las filas y las columnas para que la matriz quede de a forma n x m, donde
             n son las plantas y m los polinisadores 
         */
-        
+        //M = M[0].Select((_, i) => M.Select(row => row[i]).ToArray()).ToArray();
 
         // Definir los N y los M
         n = M_ori.GetLength(0); // Número de filas - plantas
         m = M_ori.GetLength(1); // Número de columnas - polinisadores
-        
+        double delta_inct = n; // Delta_inct va a ser el número de nodos ya que son las veces que eliminamos nodos
         // Imprimir la matriz M
         /*
         for(int i = 0; i < n ; i++ )
         {
             for(int j = 0; j < m ; j++ )
             {
-                Console.Write($"{M_ori[i,j]:F4}\t");
+                Console.Write($"{M[i][j]:F4}\t");
             }
             Console.Write("\n");
 
         }*/
-        
-        double delta_inct = n; // Delta_inct va a ser el número de nodos ya que son las veces que eliminamos nodos
         
         //Console.WriteLine("Se creó la matriz M");
 
         //Console.WriteLine($"Plantas: {n}");
 
         //double[,] A_ori = CalcularMatrizA(M_ori, n,m);
-        double[,] A_ori = new double[n, n];
+        double[,] A_ori = MO;
 
         double[] list_xi = new double[] { 0.001, 6.0 };
 
         for(int i = 0; i <= running_times; i++)
         {
-            double[,] A = new double[n, n];
+            double[,] A = new double[n, m];
             double[,] M = new double[n, m];
             Array.Copy(A_ori, A, A_ori.Length);
             
@@ -83,11 +257,11 @@ class Program
                 double avrg_H = 0.0;
                 for(int j = 0; j <= delta_inct;j++)
                 {
-                    A = CalcularMatrizA(M, n,m);
+                    //A = CalcularMatrizA(M, n,m);
                     avrg_L = Run_program(delta_sum,n,m,A,list_xi[0]);
                     avrg_H = Run_program(delta_sum,n,m,A,list_xi[1]);
-                    Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
-                    Console.WriteLine($"Promedio: {avrg_H}, Suma Delta: {delta_sum}"); // Imprimir los valores
+                    //Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
+                    //Console.WriteLine($"Promedio: {avrg_H}, Suma Delta: {delta_sum}"); // Imprimir los valores
                     writer_L.WriteLine($"{avrg_L},{delta_sum}");
                     writer_H.WriteLine($"{avrg_H},{delta_sum}");
                     delta_sum += (1/delta_inct);
@@ -235,7 +409,7 @@ class Program
         Console.WriteLine("Se creó la matriz A");
 
         // Imprimir matriz A
-        
+        /*
         Console.WriteLine("Matriz A:");
         for (int i = 0; i < n; i++)
         {
@@ -244,10 +418,10 @@ class Program
                 Console.Write($"{A[i,j]:F4}\t");
             }
             Console.WriteLine();
-        }
-        /*
-        bool isConnected = conectivity(A);
-        Console.WriteLine(isConnected ? "La red A es conexa" : "La red A no es conexa");*/
+        }*/
+        
+        //bool isConnected = conectivity(A);
+        //Console.WriteLine(isConnected ? "La red A es conexa" : "La red A no es conexa");
         return A;
     }
 
@@ -291,8 +465,8 @@ class Program
                 Console.Write($"{mod_A[i,j]:F4}\t");
             }
             Console.Write("\n");
-        }
-        */
+        }*/
+        
         //Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
         //bool isConnected = conectivity(mod_A);
         //Console.WriteLine(isConnected ? "La red A es conexa" : "La red A no es conexa");
@@ -316,6 +490,7 @@ class Program
             mod_M[ord[index],j]=0;
         }
         //Imprimir matriz mod_M
+        /*
         Console.WriteLine("\nMatriz mod_M:");
         for (int i = 0; i < n; i++)
         {
@@ -327,7 +502,8 @@ class Program
         }
         bool isConnected = conectivity(mod_M);
         Console.WriteLine(isConnected ? "La red es conexa" : "La red no es conexa");
-        
+        */
+
         //Console.WriteLine($"Total de nodos eliminados: {deleted_nodes}");
         return mod_M;
     }
@@ -428,3 +604,75 @@ class Program
         // System.Threading.Thread.Sleep(30000); // 30000 milisegundos = 30 segundos
     }
 }
+class Species {
+    public int id;
+    public int creation_time;
+    public Species father;
+    public Species first_son = null;
+    public int first_son_creation_time;
+    public Species second_son = null;
+    public int second_son_creation_time;
+    public int lambda_sons = 5;
+    public int created_sons = 0;
+
+    public Species(int tiempo, Species father) {
+        this.creation_time = tiempo;
+        this.father = father;
+        int temp1 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+        int temp2 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+        if (temp1 < temp2) {
+            this.first_son_creation_time = temp1;
+            this.second_son_creation_time = temp2;
+        } else {
+            this.first_son_creation_time = temp2;
+            this.second_son_creation_time = temp1;
+        }
+        //Console.WriteLine("Una nueva especie nacio en el tiempo:" + tiempo);
+        //Console.WriteLine($"Número generado para el primer hijo: {this.first_son_creation_time}");
+        //Console.WriteLine($"Número generado para el segundo hijo: {this.second_son_creation_time}");
+    }
+
+    static int GenerarPoisson(double lambda)
+    {
+        Random random = new Random();
+
+        double L = Math.Exp(-lambda);
+        int k = 0;
+        double p = 1.0;
+
+        do
+        {
+            k++;
+            p *= random.NextDouble();
+        } while (p > L);
+
+        return k - 1;
+    }
+
+    public Species CreateFirst(int t){
+        this.first_son = new Species(this.first_son_creation_time,this);
+        return this.first_son;
+    }
+
+    public Species CreateSecond(int t){
+        this.second_son = new Species(this.second_son_creation_time,this);
+        return this.second_son;
+    }
+
+    // Método para contar nodos
+    public int ContarNodos()
+    {
+        int count = 1; // Contar el nodo actual
+        if (first_son != null)
+        {
+            count += first_son.ContarNodos(); // Contar el hijo izquierdo
+        }
+        if (second_son != null)
+        {
+            count += second_son.ContarNodos(); // Contar el hijo derecho
+        }
+        return count;
+    }
+}
+
+

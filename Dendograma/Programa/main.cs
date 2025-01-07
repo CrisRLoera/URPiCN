@@ -44,7 +44,7 @@ class Dendograma2 {
                 }
             }
             Console.WriteLine($"Tiempo actual: {t}");
-            //Thread.Sleep(1000);
+            
             t++;
             Console.WriteLine($"Número de especies: {n}");
 
