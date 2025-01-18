@@ -13,8 +13,9 @@ class Program
         int nm = 0;
         int N = 0;
         int t = 0;
-        int gap = 50;
-        int limit_species = 20;
+        //int gap = 50;
+        int gap = 10000;
+        int limit_species = 10;
         Species[] species = new Species[limit_species];
         species[0] = new Species(t,null);
         species[0].id = N;
@@ -103,17 +104,45 @@ class Program
                 }
             }
         }
-
-        // Imprimir la matriz M
-        /*
         Console.WriteLine("Matriz M:");
         for (int i = 0; i < limit_species; i++) {
             for (int j = 0; j < limit_species; j++) {
-                Console.Write(MO[i, j] + " "); // Imprimir cada elemento seguido de una tabulación
+                Console.Write($"{MO[i, j]} "); // Imprimir cada elemento con 3 decimales
+                
             }
             Console.WriteLine(); // Nueva línea al final de cada fila
         }
-        Thread.Sleep(5000);*/
+        // Normalice
+            // Buscar el más grande
+        Console.WriteLine("Matriz M:");
+        double theBiggest = 0;
+        for (int i = 0; i < limit_species; i++) {
+            for (int j = 0; j < limit_species; j++) {
+                if (theBiggest < Math.Abs(MO[i,j])) {
+                    theBiggest = MO[i,j];
+                }
+                
+            }
+        }
+        Console.WriteLine($"El valor mas grande es {theBiggest}");
+        for (int i = 0; i < limit_species; i++) {
+            for (int j = 0; j < limit_species; j++) {
+            
+                MO[i,j] = MO[i,j]/theBiggest;
+                
+            }
+        }
+        // Imprimir la matriz M
+        
+        Console.WriteLine("Matriz M Normalizada:");
+        for (int i = 0; i < limit_species; i++) {
+            for (int j = 0; j < limit_species; j++) {
+                Console.Write($"{MO[i, j]:F3} "); // Imprimir cada elemento con 3 decimales
+                
+            }
+            Console.WriteLine(); // Nueva línea al final de cada fila
+        }
+        //Thread.Sleep(15000);
 
         /*
         bool exitCondition = false;
@@ -237,6 +266,10 @@ class Program
         double[,] A_ori = MO;
 
         double[] list_xi = new double[] { 0.001, 6.0 };
+        string directoryPathL = $"./xL";
+        string directoryPathH = $"./xH";
+        Directory.CreateDirectory(directoryPathL);
+        Directory.CreateDirectory(directoryPathH);
 
         for(int i = 0; i <= running_times; i++)
         {
@@ -250,6 +283,7 @@ class Program
             Ord = GenerarOrdenEliminacion(Ord);
             //Console.WriteLine($"Orden de eliminación: {string.Join(", ", Ord)}"); // Imprimir la lista en consola
             double delta_sum = 0.0;
+
             using (StreamWriter writer_L = new StreamWriter($"total_{i}_L.csv"))
             using (StreamWriter writer_H = new StreamWriter($"total_{i}_H.csv"))
             {
@@ -258,8 +292,8 @@ class Program
                 for(int j = 0; j <= delta_inct;j++)
                 {
                     //A = CalcularMatrizA(M, n,m);
-                    avrg_L = Run_program(delta_sum,n,m,A,list_xi[0]);
-                    avrg_H = Run_program(delta_sum,n,m,A,list_xi[1]);
+                    avrg_L = Run_program(delta_sum,n,m,A,list_xi[0],directoryPathL,Ord,j);
+                    avrg_H = Run_program(delta_sum,n,m,A,list_xi[1],directoryPathH,Ord,j);
                     //Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
                     //Console.WriteLine($"Promedio: {avrg_H}, Suma Delta: {delta_sum}"); // Imprimir los valores
                     writer_L.WriteLine($"{avrg_L},{delta_sum}");
@@ -293,7 +327,7 @@ class Program
         Console.WriteLine($"Tiempo de ejecución: {stopwatch.Elapsed.TotalSeconds} segundos");
     }
 
-    static double Run_program(double delta, int n_in, int m_in, double[,] A_in, double xi)
+    static double Run_program(double delta, int n_in, int m_in, double[,] A_in, double xi, string path_save,List<int> ordDelList, int index)
     {
         double f_n = delta;
         double[,] A = A_in;
@@ -304,23 +338,35 @@ class Program
         int n = n_in; // Número de filas - plantas
         int m = m_in; // Número de columnas - polinisadores
         
+
         // Vector de condiciones iniciales
         List<double[]> X0_cond = new List<double[]>();
         // X_H = 6.0 Y X_L = 0.001
 
         X0_cond.Add(Enumerable.Repeat(xi, n).ToArray());
 
+
         // Constantes para la ecuación diferencial
         double B = 0.1, C = 1.0, K = 5.0, D = 5.0, E = 0.9, H = 0.1;
 
         double average = 0.0;
 
-        //using (StreamWriter writer_i = new StreamWriter($"node_i_{f_n}.csv"))
-        //using (StreamWriter writer = new StreamWriter($"node_f_{f_n}.csv"))
-        //{
+        using (StreamWriter writer_i = new StreamWriter(Path.Combine(path_save,$"node_i_{f_n}.csv")))
+        using (StreamWriter writer = new StreamWriter(Path.Combine(path_save,$"node_f_{f_n}.csv")))
+        {
 
             foreach (var x0 in X0_cond)
             {
+                for (int i = 0; i < n; i++)
+                {
+                    for (int j = 0; j < index; j++)
+                    {
+                        if (i == ordDelList[j])
+                        {
+                            x0[i] = 0;
+                        }
+                    }
+                }
 
                 //Console.WriteLine($"X0: {string.Join(", ", x0.Select(val => $"{val:F4}"))}");
 
@@ -336,25 +382,31 @@ class Program
                 {
                     //Console.WriteLine($"\nIteración {i}:");
                     //Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
-                    rk4(y, dydx, n, x, h, yout, (xh, yt, dyt) => ProjectFunction(yt, dyt, B, K, C, A, D, E, H));
+                    rk4(y, dydx, n, x, h, yout, (xh, yt, dyt) => ProjectFunction(yt, dyt, B, K, C, A, D, E, H,ordDelList, index),index);
                     
                     for (int j = 0; j < n; j++)
                         y[j] = yout[j];
                     x += h;
-
+                    //Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
                     // Grabar en el archivo csv las n trayectorias
                     
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));
-                    //writer_i.WriteLine($"{yValues}");
+                    writer_i.WriteLine($"{yValues}");
 
                     // Grabar en el archivo csv el promedio de las n trayectorias
                     lastYValues = (double[])y.Clone();
+                    //Console.WriteLine($"Valores de lastYValues: {string.Join(", ", lastYValues)}");
                     average = lastYValues.Average();
-                    //writer.WriteLine($"{average}");
+                    writer.WriteLine($"{average}");
                 }
             }
-        //}
+        }
         //Console.WriteLine($"Datos guardados");
+        
+        if (double.IsNaN(average))
+        {
+            throw new InvalidOperationException("Error: El valor promedio es NaN.");
+        }
         return average;
     }
 
@@ -406,7 +458,7 @@ class Program
                 A[i, j] = sum_k;
             }
         }
-        Console.WriteLine("Se creó la matriz A");
+        //Console.WriteLine("Se creó la matriz A");
 
         // Imprimir matriz A
         /*
@@ -550,7 +602,7 @@ class Program
         }
     }
     
-    static void rk4(double[] y, double[] dydx, int n, double x, double h, double[] yout, Action<double, double[], double[]> derivs)
+    static void rk4(double[] y, double[] dydx, int n, double x, double h, double[] yout, Action<double, double[], double[]> derivs,int index)
     {
         int i;
         double xh, hh, h6;
@@ -575,31 +627,50 @@ class Program
         }
 
         derivs(x + h, yt, dyt);
-
-        for (i = 0; i < n; i++)
+        for (i = 0; i < n; i++){
+            /*
+            if (double.IsNaN(yout[i]))
+            {
+                throw new InvalidOperationException($"Error: El valor yout {i} es NaN.");
+            }*/
             yout[i] = y[i] + h6 * (dydx[i] + dyt[i] + 2.0 * dym[i]);
+            //if (index == n){Console.WriteLine($"{yout[i]}");} // Imprime los yout de la ultima iteración
+        }
     }
 
-    static void ProjectFunction(double[] xi, double[] dxdt, double B, double K, double C, double[,] A, double D, double E, double H)
+    static void ProjectFunction(double[] xi, double[] dxdt, double B, double K, double C, double[,] A, double D, double E, double H, List<int> ord, int index)
     {
         int N = xi.Length;
-
+        double growthTerm = 0;
+        double sum = 0.0;
+        double denominator = 0;
+        double interactionTerm = 0;
         for (int i = 0; i < N; i++)
         {
-            double sum = 0.0;
+            for (int j = 0; j < index; j++)
+            {
+                if (i == ord[j])
+                {
+                    xi[i] = 0;
+                }
+            }
+        }
+        for (int i = 0; i < N; i++)
+        {
+            sum = 0.0;
             for (int j = 0; j < N; j++)
             {
-                double interactionTerm = A[i, j] * ((xi[i] * xi[j]) / (D + (E * xi[i]) + (H * xi[j])));
+                denominator = D + (E * xi[i]) + (H * xi[j]);
+                interactionTerm = A[i, j] * ((xi[i] * xi[j]) / denominator);
                 sum += interactionTerm;
-//                Console.WriteLine($"Interacción [{i},{j}]: A[{i},{j}] * ({xi[i]} * {xi[j]}) / ({D} + ({E} * {xi[i]}) + ({H} * {xi[j]})) = {interactionTerm}");
             }
             
-            double growthTerm = xi[i] * (1 - (xi[i] / K)) * ((xi[i] / C )- 1);
-            dxdt[i] = B + growthTerm + sum;
+            growthTerm = xi[i] * (1 - (xi[i] / K)) * ((xi[i] / C )- 1);
+            dxdt[i] = growthTerm + sum;
             
-//            Console.WriteLine($"\nEcuación para especie {i}:");
-//            Console.WriteLine($"dxdt[{i}] = {B} + [{xi[i]} * (1 - {xi[i]}/{K}) * ({xi[i]}/{C} - 1)] + {sum}");
-//            Console.WriteLine($"dxdt[{i}] = {B} + {growthTerm} + {sum} = {dxdt[i]}\n");
+            //Console.WriteLine($"\nEcuación para especie {i}:");
+            //Console.WriteLine($"dxdt[{i}] = [{xi[i]} * (1 - {xi[i]}/{K}) * ({xi[i]}/{C} - 1)] + {sum}");
+            //Console.WriteLine($"dxdt[{i}] = {growthTerm} + {sum} = {dxdt[i]}\n");
         }
         // System.Threading.Thread.Sleep(30000); // 30000 milisegundos = 30 segundos
     }
@@ -618,8 +689,11 @@ class Species {
     public Species(int tiempo, Species father) {
         this.creation_time = tiempo;
         this.father = father;
-        int temp1 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
-        int temp2 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+        int temp1 = tiempo + GenerarPLaw();
+        int temp2 = tiempo + GenerarPLaw();
+        //int temp1 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+        //int temp2 = tiempo + GenerarPoisson(this.lambda_sons) + 1;
+
         if (temp1 < temp2) {
             this.first_son_creation_time = temp1;
             this.second_son_creation_time = temp2;
@@ -627,11 +701,20 @@ class Species {
             this.first_son_creation_time = temp2;
             this.second_son_creation_time = temp1;
         }
-        //Console.WriteLine("Una nueva especie nacio en el tiempo:" + tiempo);
+        Console.WriteLine("Una nueva especie nacio en el tiempo:" + tiempo);
         //Console.WriteLine($"Número generado para el primer hijo: {this.first_son_creation_time}");
         //Console.WriteLine($"Número generado para el segundo hijo: {this.second_son_creation_time}");
     }
-
+    static int GenerarPLaw()
+    {
+        Random random = new Random();
+        double x = random.NextDouble();
+        double alpha = 2.5;
+        double min = 0.0;
+        double max = 10000.0;
+        double Py = min + (max - min) * (1 - Math.Pow(x, 1 / alpha));
+        return (int)Math.Floor(Py);
+    }
     static int GenerarPoisson(double lambda)
     {
         Random random = new Random();
