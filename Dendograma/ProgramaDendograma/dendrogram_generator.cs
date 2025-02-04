@@ -30,10 +30,10 @@ namespace DendrogramGeneratorClass {
             this.M_d = new double[limit_species,limit_species];
             GenerateSpecies();
             GenerateMatrix();
-            //SaveMatrixTXTFile();
+            SaveMatrixTXTFile();
             Console.WriteLine($"Tiempo de ejecución: {this.stopwatch.Elapsed.TotalSeconds} segundos");
         }
-        public DendrogramGenerator(int custom_gap, int custom_limit_species)
+        public DendrogramGenerator(int custom_gap, int custom_limit_species,string path)
         {
             this.gap = custom_gap;
             this.limit_species = custom_limit_species;
@@ -42,7 +42,7 @@ namespace DendrogramGeneratorClass {
             this.M_d = new double[limit_species,limit_species];
             GenerateSpecies();
             GenerateMatrix();
-            //SaveMatrixTXTFile();
+            SaveMatrixTXTFile(path);
             Console.WriteLine($"Tiempo de ejecución: {this.stopwatch.Elapsed.TotalSeconds} segundos");
         }
 
@@ -171,6 +171,17 @@ namespace DendrogramGeneratorClass {
         void SaveMatrixTXTFile()
         {
             using (StreamWriter writer = new StreamWriter($"interaction_matrix.txt"))
+            {
+                for (int i = 0; i < this.limit_species; i++) {
+                    // Guardar cada fila de la matriz con espacios como separadores
+                    string line = string.Join(" ", Enumerable.Range(0, this.limit_species).Select(j => this.M_d[i, j].ToString("F4")));
+                    writer.WriteLine(line);
+                }
+            }
+        }
+        void SaveMatrixTXTFile(string path_file)
+        {
+            using (StreamWriter writer = new StreamWriter($"./Database/{path_file}/interaction_matrix.txt"))
             {
                 for (int i = 0; i < this.limit_species; i++) {
                     // Guardar cada fila de la matriz con espacios como separadores

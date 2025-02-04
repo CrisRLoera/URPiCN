@@ -24,7 +24,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        DendrogramGenerator root = new DendrogramGenerator(30000,20);
+        string date_registry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        string directoryPathLOri = $"./Database/{date_registry}";
+        string directoryPathHOri = $"./Database/{date_registry}";
+        string directoryPathLM;
+        string directoryPathHM;
+        Directory.CreateDirectory(directoryPathLOri);
+        Directory.CreateDirectory(directoryPathHOri);
+        DendrogramGenerator root = new DendrogramGenerator(30000,20,date_registry);
         double[,] M_ori = root.GetMatrix();
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -70,13 +77,7 @@ class Program
         double[,] A_ori = M_ori;
 
         double[] list_xi = new double[] { 0.001, 6.0 };
-        string date_registry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        string directoryPathLOri = $"./Database/{date_registry}";
-        string directoryPathHOri = $"./Database/{date_registry}";
-        string directoryPathLM;
-        string directoryPathHM;
-        Directory.CreateDirectory(directoryPathLOri);
-        Directory.CreateDirectory(directoryPathHOri);
+        
         using (StreamWriter env_writer = new StreamWriter($"./Database/{date_registry}/env.txt"))
         {
             env_writer.WriteLine($"total species:{n}");
@@ -111,7 +112,6 @@ class Program
             {
                 double avrg_L = 0.0;
                 double avrg_H = 0.0;
-                
                 for(int j = 0; j <= delta_inct;j++)
                 {
                     //A = CalcularMatrizA(M, n,m);
@@ -119,6 +119,7 @@ class Program
                     directoryPathH = $"{directoryPathHM}fn{j}-{n}/xH/";
                     Directory.CreateDirectory(directoryPathL);
                     Directory.CreateDirectory(directoryPathH);
+                    
                     avrg_L = Run_program(delta_sum,n,m,A,list_xi[0],directoryPathL,Ord,j);
                     avrg_H = Run_program(delta_sum,n,m,A,list_xi[1],directoryPathH,Ord,j);
                     //Console.WriteLine($"Promedio: {avrg_L}, Suma Delta: {delta_sum}"); // Imprimir los valores
@@ -186,6 +187,7 @@ class Program
         // X_H = 6.0 Y X_L = 0.001
 
         X0_cond.Add(Enumerable.Repeat(xi, n).ToArray());
+        Console.WriteLine($"Contenido de X0_cond: {string.Join(", ", X0_cond.Select(arr => $"[{string.Join(", ", arr)}]"))}");
 
 
         // Constantes para la ecuación diferencial
@@ -196,7 +198,8 @@ class Program
         using (StreamWriter writer_i = new StreamWriter(Path.Combine(path_save,$"node_all.csv")))
         using (StreamWriter writer = new StreamWriter(Path.Combine(path_save,$"node_avg.csv")))
         {
-
+            writer_i.WriteLine($"{string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
+            writer.WriteLine($"{xi}");
             foreach (var x0 in X0_cond)
             {
                 for (int i = 0; i < n; i++)
@@ -206,13 +209,16 @@ class Program
                         if (i == ordDelList[j])
                         {
                             x0[i] = 0;
+                            //X0_cond[i] = new double[0];
                         }
                     }
                 }
 
-                //Console.WriteLine($"X0: {string.Join(", ", x0.Select(val => $"{val:F4}"))}");
+                Console.WriteLine($"X0: {string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
 
                 double[] y = (double[])x0.Clone();
+                //double[] y = (double[])X0_cond[0].Clone();
+
                 
                 double[] dydx = new double[n];
                 double[] yout = new double[n];
@@ -229,7 +235,7 @@ class Program
                     for (int j = 0; j < n; j++)
                         y[j] = yout[j];
                     x += h;
-                    //Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
+                    Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
                     // Grabar en el archivo csv las n trayectorias
                     
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));
@@ -259,8 +265,8 @@ class Program
             gnu_writer_avg.WriteLine($"set ylabel \"x_i\" font \"Arial,20\"");
             gnu_writer_all.WriteLine($"set datafile separator \",\"");
             gnu_writer_avg.WriteLine($"set datafile separator \",\"");
-            gnu_writer_all.WriteLine($"plot for [i=1:{n_in}] \'node_all.csv\' using ($0):i ");
-            gnu_writer_avg.WriteLine($"plot \'node_avg.csv\'");
+            gnu_writer_all.WriteLine($"plot for [i=1:{n_in}] \'node_all.csv\' using ($0):i notitle");
+            gnu_writer_avg.WriteLine($"plot \'node_avg.csv\' notitle");
 
         }
         if (double.IsNaN(average))
@@ -398,6 +404,10 @@ class Program
             for (int j = 0; j < N; j++)
             {
                 denominator = D + (E * xi[i]) + (H * xi[j]);
+                if (denominator == 0)
+                {
+                    Console.WriteLine("¡Alerta! El denominador es 0.");
+                }
                 interactionTerm = A[i, j] * ((xi[i] * xi[j]) / denominator);
                 sum += interactionTerm;
             }
