@@ -31,13 +31,13 @@ class Program
         string directoryPathHM;
         Directory.CreateDirectory(directoryPathLOri);
         Directory.CreateDirectory(directoryPathHOri);
-        DendrogramGenerator root = new DendrogramGenerator(30000,20,date_registry);
+        DendrogramGenerator root = new DendrogramGenerator(30000,20,directoryPathLOri);
         double[,] M_ori = root.GetMatrix();
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         // Main program
 
-        double running_times = 20;
+        double running_times = 1;
         int n = M_ori.GetLength(0);
         int m = M_ori.GetLength(1);
         for (int i = 0; i < n; i++)
@@ -187,7 +187,7 @@ class Program
         // X_H = 6.0 Y X_L = 0.001
 
         X0_cond.Add(Enumerable.Repeat(xi, n).ToArray());
-        Console.WriteLine($"Contenido de X0_cond: {string.Join(", ", X0_cond.Select(arr => $"[{string.Join(", ", arr)}]"))}");
+        //Console.WriteLine($"Contenido de X0_cond: {string.Join(", ", X0_cond.Select(arr => $"[{string.Join(", ", arr)}]"))}");
 
 
         // Constantes para la ecuación diferencial
@@ -235,7 +235,7 @@ class Program
                     for (int j = 0; j < n; j++)
                         y[j] = yout[j];
                     x += h;
-                    Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
+                    //Console.WriteLine($"Valores de y: {string.Join(", ", y.Select(val => $"{val:F4}"))}");
                     // Grabar en el archivo csv las n trayectorias
                     
                     string yValues = string.Join(",", y.Select(val => $"{val:F4}"));

@@ -76,7 +76,7 @@ class Program
         {
             for (int r = 0; r < n; r++)
             {
-                vector[r] = GetRandomNumber(5.0,6.0); // Genera un vector con números aleatorios entre 0.0 y 1.0
+                vector[r] = GetRandomNumber(1.0,0.0); // Genera un vector con números aleatorios entre 0.0 y 1.0
             }
             
 
