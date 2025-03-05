@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.IO;
 using SpeciesClass;
+using System.Collections.Generic;
 
 namespace DendrogramGeneratorClass
 {
@@ -11,24 +12,13 @@ namespace DendrogramGeneratorClass
         private int current_species = 0;
         private int N = 0;
         private int t = 0;
-        public int gap = 10000;
+        public int gap = 0;
         public int limit_species = 10;
         public Species[] species;
         public double[,] M_d;
 
-        public Species root;
+        public Species root = null;
 
-        public DendrogramGenerator()
-        {
-            this.stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            this.species = new Species[limit_species];
-            this.M_d = new double[limit_species, limit_species];
-            GenerateSpecies();
-            GenerateMatrix();
-            SaveMatrixTXTFile();
-            SaveNewickFile("tree.nwk");
-            Console.WriteLine($"Tiempo de ejecución: {this.stopwatch.Elapsed.TotalSeconds} segundos");
-        }
 
         public DendrogramGenerator(int custom_gap, int custom_limit_species, string path)
         {
@@ -37,8 +27,15 @@ namespace DendrogramGeneratorClass
             this.stopwatch = System.Diagnostics.Stopwatch.StartNew();
             this.species = new Species[limit_species];
             this.M_d = new double[limit_species, limit_species];
-            GenerateSpecies();
-            GenerateMatrix();
+            double k_nodes = 0;
+            if (this.limit_species % 2 == 0)
+            {
+                k_nodes = limit_species - 1;
+            } else {
+                k_nodes = (limit_species - 1)+ 0.5;
+            }
+            this.root = GenerateCompleteBinaryTree((int)((2*(k_nodes))+1));
+            GenerateMatrix(path);
             SaveMatrixTXTFile(path);
             Directory.CreateDirectory(path);
             SaveNewickFile($"{path}/tree.nwk");
@@ -50,71 +47,113 @@ namespace DendrogramGeneratorClass
             return this.M_d;
         }
 
-        void GenerateSpecies()
+
+        public Species GenerateCompleteBinaryTree(int n)
         {
-            this.species[0] = new Species(t, null);
-            this.species[0].id = N;
-            this.root = species[0];
-            this.current_species++;
-            Species[] speciesCopy;
-            while (this.current_species < this.limit_species)
+            Console.WriteLine($"Num Nodes in tree:{n}");
+            if (n <= 0) return null;
+
+            // Crear la raíz con tiempo inicial 0
+            Species root = new Species(0,0, null);
+            int id_count = 0;
+            root.id = id_count;
+            Queue<Species> queue = new Queue<Species>();
+            queue.Enqueue(root);
+            int count = 1;
+            List<Species> terminalNodes = new List<Species>(); // Lista temporal para hojas
+
+            // Generar nodos hasta alcanzar n
+            while (count < n)
             {
-                speciesCopy = this.species.Clone() as Species[];
-                for (int i = 0; i < this.limit_species; i++)
+                Species current = queue.Dequeue();
+                bool isLeaf = true;
+
+                // Crear primer hijo si aún no llegamos a n
+                if (count < n)
                 {
-                    if (speciesCopy[i] != null)
-                    {
-                        if (speciesCopy[i].created_sons == 0)
-                        {
-                            if (this.t == speciesCopy[i].first_son_creation_time && this.current_species < this.limit_species)
-                            {
-                                this.species[i] = speciesCopy[i].CreateFirst(this.t);
-                                speciesCopy[i].created_sons = speciesCopy[i].created_sons + 1;
-                                this.N++;
-                                this.species[i].id = N;
-                            }
-                        }
-                        if (speciesCopy[i].father != null)
-                        {
-                            if (speciesCopy[i].father.created_sons == 1)
-                            {
-                                if (this.t == speciesCopy[i].father.second_son_creation_time && this.current_species < this.limit_species)
-                                {
-                                    this.species[current_species] = speciesCopy[i].father.CreateSecond(this.t);
-                                    this.N++;
-                                    this.species[current_species].id = N;
-                                    this.current_species++;
-                                    speciesCopy[i].father.created_sons = speciesCopy[i].father.created_sons + 1;
-                                }
-                            }
-                        }
-                    }
+                    Species first = current.CreateFirst(current.first_son_creation_time);
+                    id_count++;
+                    first.id = id_count;
+                    queue.Enqueue(first);
+                    count++;
+                    isLeaf = false;
                 }
-                this.t++;
+
+                // Crear segundo hijo si aún no llegamos a n
+                if (count < n)
+                {
+                    Species second = current.CreateSecond(current.second_son_creation_time);
+                    queue.Enqueue(second);
+                    id_count++;
+                    second.id = id_count;
+                    count++;
+                    isLeaf = false;
+                }
+
+                // Si el nodo no creó hijos, es una hoja
+                if (isLeaf)
+                {
+                    Console.WriteLine($"Hoja");
+                    terminalNodes.Add(current);
+                }
             }
+            Console.WriteLine($"Elementos en la cola antes de Dequeue: {queue.Count}");
+            // Guardar los nodos de la cola en una lista
+            List<Species> allNodes = new List<Species>(queue);
+
+            // Guardar los nodos terminales
+            this.species = allNodes.ToArray(); // En lugar de terminalNodes.ToArray()
+            
+
+            // Guardar los nodos terminales en this.species
+            //this.species = terminalNodes.ToArray();
+
+            return root;
         }
 
-        double[,] GenerateMatrix()
+
+        public double[,] GenerateMatrix(string path_file)
         {
             Species fix;
             Species pointer;
-            bool isTheSame;
-            for (int i = 0; i < this.limit_species; i++)
+            int current_time = 0;
+            int speciesCount = this.species.Length; // Para evitar accesos fuera de rango
+            for(int i = 0; i < speciesCount; i++)
             {
-                for (int j = 0; j < this.limit_species; j++)
+                if(this.species[i].creation_time > current_time)
                 {
+                    current_time = this.species[i].creation_time;
+                }
+            }
+            Console.WriteLine(current_time);
+            bool isTheSame;
+            Console.WriteLine($"Case 3 {speciesCount}");
+            for (int i = 0; i < speciesCount; i++)
+            {
+                
+                for (int j = 0; j < speciesCount; j++)
+                {
+                    
                     if (i != j)
                     {
+
                         fix = this.species[i];
                         pointer = this.species[j];
+
+                        if (fix == null || pointer == null)
+                        {
+                            Console.WriteLine($"Error: species[{i}] o species[{j}] es null.");
+                            continue; // Evitar accesos inválidos
+                        }
+
                         isTheSame = false;
-                        while (isTheSame != true)
+                        while (!isTheSame)
                         {
                             if (fix == pointer && pointer != null)
                             {
                                 isTheSame = true;
                             }
-                            if (isTheSame != true)
+                            if (!isTheSame)
                             {
                                 if (pointer.father == null)
                                 {
@@ -126,6 +165,7 @@ namespace DendrogramGeneratorClass
                                     else
                                     {
                                         Console.WriteLine("Fatal error");
+                                        break;
                                     }
                                 }
                                 else
@@ -134,9 +174,8 @@ namespace DendrogramGeneratorClass
                                 }
                             }
                         }
-
-                        this.M_d[i, j] = (species[i].creation_time - pointer.creation_time) + (species[j].creation_time - pointer.creation_time) - gap;
-
+                        this.M_d[i, j] = ((((species[i].creation_time - pointer.creation_time)+(species[j].creation_time - pointer.creation_time))/2) - gap);
+                        Console.WriteLine($"{current_time} - {pointer.creation_time} - {gap} = {this.M_d[i, j]} for {i},{j}");
                     }
                     else
                     {
@@ -144,32 +183,62 @@ namespace DendrogramGeneratorClass
                     }
                 }
             }
-
-            double theBiggest = 0;
-            for (int i = 0; i < this.limit_species; i++)
+            
+            for(int i = 0; i < speciesCount ; i++ )
             {
-                for (int j = 0; j < this.limit_species; j++)
+                for(int j = 0; j < speciesCount ; j++ )
                 {
-                    if (theBiggest < Math.Abs(this.M_d[i, j]))
-                    {
-                        theBiggest = this.M_d[i, j];
-                    }
+                    Console.Write($"{M_d[i,j]:F4}\t");
                 }
-            }
+                Console.Write("\n");
 
-            for (int i = 0; i < this.limit_species; i++)
-            {
-                for (int j = 0; j < this.limit_species; j++)
-                {
-                    this.M_d[i, j] = this.M_d[i, j] / theBiggest;
-                }
             }
+            SaveMatrixTXTNNFile(path_file);
+            this.M_d = NormalizarMatriz(this.M_d,-1,1);
+            
             return this.M_d;
         }
+        static double[,] NormalizarMatriz(double[,] matriz, double nuevoMin, double nuevoMax)
+    {
+        int filas = matriz.GetLength(0);
+        int columnas = matriz.GetLength(1);
 
-        void SaveMatrixTXTFile()
+        double minValor = double.MaxValue;
+        double maxValor = double.MinValue;
+
+        // Encontrar el mínimo y el máximo en la matriz
+        for (int i = 0; i < filas; i++)
         {
-            using (StreamWriter writer = new StreamWriter($"interaction_matrix.txt"))
+            for (int j = 0; j < columnas; j++)
+            {
+                if (matriz[i, j] < minValor) minValor = matriz[i, j];
+                if (matriz[i, j] > maxValor) maxValor = matriz[i, j];
+            }
+        }
+
+        // Aplicar la normalización en el rango [-1,1]
+        double[,] resultado = new double[filas, columnas];
+        for (int i = 0; i < filas; i++)
+        {
+            for (int j = 0; j < columnas; j++)
+            {
+                if (i != j)
+                {
+                    resultado[i, j] = nuevoMin + (nuevoMax - nuevoMin) * (matriz[i, j] - minValor) / (maxValor - minValor);
+                }
+                else
+                {
+                    resultado[i, j] = 0;
+                }
+            }
+        }
+
+        return resultado;
+        }
+
+        void SaveMatrixTXTNNFile(string path_file)
+        {
+            using (StreamWriter writer = new StreamWriter($"./{path_file}/interaction_matrix_NN.txt"))
             {
                 for (int i = 0; i < this.limit_species; i++)
                 {
@@ -204,11 +273,11 @@ namespace DendrogramGeneratorClass
             if (root == null) return "";
             if (root.first_son == null && root.second_son == null)
             {
-                return $"{root.id}:{root.creation_time}";
+                return $"{root.id}:{root.creation_time_pure}";
             }
             string left = GenerateNewick(root.first_son);  // Supongamos que la relación es binaria
             string right = GenerateNewick(root.second_son); // Si tienes una estructura más compleja, puedes ajustar esto
-            return $"({left},{right}){root.id}:{root.creation_time}";
+            return $"({left},{right}){root.id}:{root.creation_time_pure}";
         }
 
     }

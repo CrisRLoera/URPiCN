@@ -31,7 +31,7 @@ class Program
         string directoryPathHM;
         Directory.CreateDirectory(directoryPathLOri);
         Directory.CreateDirectory(directoryPathHOri);
-        DendrogramGenerator root = new DendrogramGenerator(30000,20,directoryPathLOri);
+        DendrogramGenerator root = new DendrogramGenerator(30,60,directoryPathLOri);
         double[,] M_ori = root.GetMatrix();
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -74,6 +74,15 @@ class Program
         //Console.WriteLine($"Plantas: {n}");
 
         //double[,] A_ori = CalcularMatrizA(M_ori, n,m);
+        for(int i = 0; i < n ; i++ )
+        {
+            for(int j = 0; j < m ; j++ )
+            {
+                Console.Write($"{M_ori[i,j]:F4}\t");
+            }
+            Console.Write("\n");
+
+        }
         double[,] A_ori = M_ori;
 
         double[] list_xi = new double[] { 0.001, 6.0 };
@@ -198,8 +207,8 @@ class Program
         using (StreamWriter writer_i = new StreamWriter(Path.Combine(path_save,$"node_all.csv")))
         using (StreamWriter writer = new StreamWriter(Path.Combine(path_save,$"node_avg.csv")))
         {
-            writer_i.WriteLine($"{string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
-            writer.WriteLine($"{xi}");
+            //writer_i.WriteLine($"{string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
+            //writer.WriteLine($"{xi}");
             foreach (var x0 in X0_cond)
             {
                 for (int i = 0; i < n; i++)
@@ -214,7 +223,7 @@ class Program
                     }
                 }
 
-                Console.WriteLine($"X0: {string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
+                //Console.WriteLine($"X0: {string.Join(", ", X0_cond[0].Select(val => $"{val:F4}"))}");
 
                 double[] y = (double[])x0.Clone();
                 //double[] y = (double[])X0_cond[0].Clone();

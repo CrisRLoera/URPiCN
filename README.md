@@ -18,5 +18,3 @@ Tareas
 
 Tareas opcionales
 -[x] Priorizar la eliminación de las especies con interacciones positivias, con el objetivo de ver comportamientos en los que una especie tiende a eliminar la poblacion de otra
-
-

@@ -10,4 +10,4 @@ fig, ax = plt.subplots(figsize=(12, 12))
 Phylo.draw(tree, do_show=False, axes=ax)
 
 
-fig.savefig("arbol_filogenetico.png", dpi=300)
+fig.savefig("arbol_filogenetico2.png", dpi=300)
