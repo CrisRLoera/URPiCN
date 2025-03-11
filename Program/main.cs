@@ -23,6 +23,8 @@ class Program
     static void Main(string[] args)
     {
         string date_registry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        double lowerXi = 5.0;
+        double upperXi = 6.0;
         string directoryPathOri = $"./Database/{date_registry}";
         Directory.CreateDirectory(directoryPathOri);
 
@@ -52,15 +54,13 @@ class Program
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         // Main program
 
-        double running_times = 1000000; // TODO: Miles de ejecuciones
+        double running_times = 1000000;
         int m = M_ori.GetLength(1);
         
         double[,] A_ori = M_ori;
 
         double[] vector = new double[n];
         Random random = new Random();
-
-        
         
         using (StreamWriter env_writer = new StreamWriter($"./Database/{date_registry}/env.txt"))
         {
@@ -76,17 +76,16 @@ class Program
         {
             for (int r = 0; r < n; r++)
             {
-                vector[r] = GetRandomNumber(5.0,6.0); // Genera un vector con números aleatorios entre 0.0 y 1.0
+                vector[r] = GetRandomNumber(lowerXi,upperXi);
             }
             
-
             double[,] A = new double[n, m];
 
 
             Array.Copy(A_ori, A, A_ori.Length);
             
             // Llamar a Run_program y almacenar el resultado
-            string result = Run_program(n, A, vector);
+            string result = Run_program(n, A, vector,date_registry);
 
             // Verificar si la clave ya existe en el diccionario
             if (resultsDictionary.ContainsKey(result))
@@ -131,10 +130,10 @@ class Program
         return random.NextDouble() * (maximum - minimum) + minimum;
     }
 
-    static string Run_program(int n_in, double[,] A_in, double[] xi)
+    static string Run_program(int n_in, double[,] A_in, double[] xi, string date_registry)
     {
         double[,] A = A_in;
-        double inct = 1000.0;
+        int inct = 1000;
         double h = 25.0 / (inct - 1.0);
         
         int n = n_in; // Número de filas - plantas
@@ -148,12 +147,14 @@ class Program
         
         double[] dydx = new double[n];
         double[] yout = new double[n];
+        double[] sums = new double[inct];
         double x = 0.0;
         
         int[] binaryVector = new int[n]; // Crear el vector binario
 
         // Crear el vector binario
         string binaryVectorString = ""; // Inicializar la cadena
+        string yVectorString = "";
 
         for (int i = 0; i < inct; i++)
         {
@@ -163,8 +164,20 @@ class Program
             
             for (int j = 0; j < n; j++)
                 y[j] = yout[j];
+                sums[i] = yout.Sum();
             x += h;
-
+            using (StreamWriter sums_vect_writer = new StreamWriter($"./Database/{date_registry}/sums_v.csv",true))
+            {
+                yVectorString = string.Join(" ", y.Select(b => b.ToString()));
+                sums_vect_writer.WriteLine($"{yVectorString}");
+            }
+        }
+        using (StreamWriter sums_writer = new StreamWriter($"./Database/{date_registry}/sums.csv", true))
+        {
+            for (int i = 0; i < inct; i++)
+            {
+                sums_writer.WriteLine($"{sums[i]}");
+            }
         }
         // Generar el vector binario basado en los valores de y
         for (int j = 0; j < n; j++)
@@ -217,6 +230,26 @@ class Program
         double sum = 0.0;
         double denominator = 0;
         double interactionTerm = 0;
+        double sum_T = 0.0;
+        double sum_One = 0.0;
+        sum_T = 0.0;
+        // Sumo las condiciones iniciales para obtener un factor T que me permita normalizarlas
+        for (int r = 0; r < N; r++)
+        {
+            sum_T = sum_T + xi[r];
+        }
+        for (int r = 0; r < N; r++)
+        {
+            xi[r] =  xi[r]/sum_T;
+        }
+        // Verificar que la suma sea 1
+        sum_One = 0.0;
+        for (int r = 0; r < N; r++)
+        {
+            sum_One =  sum_One + xi[r];
+        }
+
+
         for (int i = 0; i < N; i++)
         {
             sum = 0.0;
