@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dendograma", "Dendograma", "{D5E32ED1-3C1F-C9E7-808B-A4AEDD3D22FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiDendrograma", "Dendograma\ProgramaDendograma\MiDendrograma.csproj", "{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D02E3F28-A98F-8E9F-77C9-FD76AB6B57AE} = {D5E32ED1-3C1F-C9E7-808B-A4AEDD3D22FA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D7DF33DD-F722-4583-9D21-40D28BF9ED3C}
+	EndGlobalSection
+EndGlobal

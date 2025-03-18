@@ -3,6 +3,7 @@ using System.Linq;
 using System.IO;
 using SpeciesClass;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace DendrogramGeneratorClass
 {
@@ -16,8 +17,8 @@ namespace DendrogramGeneratorClass
         public int limit_species = 10;
         public Species[] species;
         public double[,] M_d;
-
         public Species root = null;
+        public int[,] interaction_ids;
 
 
         public DendrogramGenerator(int custom_gap, int custom_limit_species, string path)
@@ -27,6 +28,7 @@ namespace DendrogramGeneratorClass
             this.stopwatch = System.Diagnostics.Stopwatch.StartNew();
             this.species = new Species[limit_species];
             this.M_d = new double[limit_species, limit_species];
+            this.interaction_ids = new int[limit_species, limit_species];
             double k_nodes = 0;
             if (this.limit_species % 2 == 0)
             {
@@ -39,6 +41,8 @@ namespace DendrogramGeneratorClass
             SaveMatrixTXTFile(path);
             Directory.CreateDirectory(path);
             SaveNewickFile($"{path}/tree.nwk");
+            SaveMatrixIDFile(path);
+            Species.SaveToJson(this.root, path);
             Console.WriteLine($"Tiempo de ejecución: {this.stopwatch.Elapsed.TotalSeconds} segundos");
         }
 
@@ -71,7 +75,7 @@ namespace DendrogramGeneratorClass
                 // Crear primer hijo si aún no llegamos a n
                 if (count < n)
                 {
-                    Species first = current.CreateFirst(current.first_son_creation_time);
+                    Species first = current.CreateFirst(current.creation_time);
                     id_count++;
                     first.id = id_count;
                     queue.Enqueue(first);
@@ -82,7 +86,7 @@ namespace DendrogramGeneratorClass
                 // Crear segundo hijo si aún no llegamos a n
                 if (count < n)
                 {
-                    Species second = current.CreateSecond(current.second_son_creation_time);
+                    Species second = current.CreateSecond(current.creation_time);
                     queue.Enqueue(second);
                     id_count++;
                     second.id = id_count;
@@ -127,7 +131,7 @@ namespace DendrogramGeneratorClass
             }
             Console.WriteLine(current_time);
             bool isTheSame;
-            Console.WriteLine($"Case 3 {speciesCount}");
+            //Console.WriteLine($"Case 3 {speciesCount}");
             for (int i = 0; i < speciesCount; i++)
             {
                 
@@ -175,7 +179,8 @@ namespace DendrogramGeneratorClass
                             }
                         }
                         this.M_d[i, j] = ((((species[i].creation_time - pointer.creation_time)+(species[j].creation_time - pointer.creation_time))/2) - gap);
-                        Console.WriteLine($"{current_time} - {pointer.creation_time} - {gap} = {this.M_d[i, j]} for {i},{j}");
+                        this.interaction_ids[i, j] = species[j].id;
+                        //Console.WriteLine($"{current_time} - {pointer.creation_time} - {gap} = {this.M_d[i, j]} for {i},{j}");
                     }
                     else
                     {
@@ -183,7 +188,7 @@ namespace DendrogramGeneratorClass
                     }
                 }
             }
-            
+            /*
             for(int i = 0; i < speciesCount ; i++ )
             {
                 for(int j = 0; j < speciesCount ; j++ )
@@ -192,7 +197,7 @@ namespace DendrogramGeneratorClass
                 }
                 Console.Write("\n");
 
-            }
+            }*/
             SaveMatrixTXTNNFile(path_file);
             this.M_d = NormalizarMatriz(this.M_d,-1,1);
             
@@ -256,6 +261,35 @@ namespace DendrogramGeneratorClass
                 {
                     string line = string.Join(" ", Enumerable.Range(0, this.limit_species).Select(j => this.M_d[i, j].ToString("F4")));
                     writer.WriteLine(line);
+                }
+            }
+        }
+
+        void SaveMatrixIDFile(string path_file)
+        {
+            string filePath = Path.Combine(path_file, "interaction_matrix.csv");
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                int n = species.Length;
+                
+                // Escribir encabezado
+                writer.Write(","); // Celda vacía en la esquina superior izquierda
+                writer.WriteLine(string.Join(",", species.Select(s => s.id)));
+                
+                for (int i = 0; i < n; i++)
+                {
+                    writer.Write(species[i].id + ","); // Escribir ID en la primera columna
+                    
+                    for (int j = 0; j < n; j++)
+                    {
+                        int distance = species[i].creation_time  + species[j].creation_time;
+                        writer.Write(distance);
+                        
+                        if (j < n - 1)
+                            writer.Write(","); // Separar valores con coma
+                    }
+                    
+                    writer.WriteLine(); // Nueva línea al final de cada fila
                 }
             }
         }

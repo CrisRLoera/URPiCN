@@ -23,14 +23,15 @@ class Program
     static void Main(string[] args)
     {
         string date_registry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        double lowerXi = 5.0;
+        double lowerXi = 0.0;
         double upperXi = 6.0;
+        double running_times = 10;
         string directoryPathOri = $"./Database/{date_registry}";
         Directory.CreateDirectory(directoryPathOri);
 
         double[,] M_ori;
         int n; // Declarar n al principio
-        using (var reader = new StreamReader("./interaction_matrix.txt"))
+        using (var reader = new StreamReader("./interaction_matrix_poi.txt"))
         {
             var lines = new List<string>();
             while (!reader.EndOfStream)
@@ -54,7 +55,7 @@ class Program
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         // Main program
 
-        double running_times = 1000000;
+        
         int m = M_ori.GetLength(1);
         
         double[,] A_ori = M_ori;
@@ -111,7 +112,6 @@ class Program
                     writer_z.WriteLine($"{decimalValue},{entry.Value}");
                 } else {
                     int num = 0;
-                    
                     writer.WriteLine($"{decimalValue},{entry.Value}"); // Escribir cada resultado y su conteo
                 }
             }
@@ -133,7 +133,7 @@ class Program
     static string Run_program(int n_in, double[,] A_in, double[] xi, string date_registry)
     {
         double[,] A = A_in;
-        int inct = 1000;
+        int inct = 100;
         double h = 25.0 / (inct - 1.0);
         
         int n = n_in; // Número de filas - plantas
@@ -164,29 +164,17 @@ class Program
             
             for (int j = 0; j < n; j++)
                 y[j] = yout[j];
-                sums[i] = yout.Sum();
             x += h;
-            using (StreamWriter sums_vect_writer = new StreamWriter($"./Database/{date_registry}/sums_v.csv",true))
-            {
-                yVectorString = string.Join(" ", y.Select(b => b.ToString()));
-                sums_vect_writer.WriteLine($"{yVectorString}");
-            }
-        }
-        using (StreamWriter sums_writer = new StreamWriter($"./Database/{date_registry}/sums.csv", true))
-        {
-            for (int i = 0; i < inct; i++)
-            {
-                sums_writer.WriteLine($"{sums[i]}");
-            }
-        }
-        // Generar el vector binario basado en los valores de y
+
+        }        // Generar el vector binario basado en los valores de y
         for (int j = 0; j < n; j++)
         {
             binaryVector[j] = y[j] > 1 ? 1 : 0; // Asignar 1 si y[j] > 1, de lo contrario 0
         }
-
+        //Console.WriteLine(string.Join(", ", y.Select(b => b.ToString())));
         // Convertir el vector binario a una cadena sin comas ni espacios
         binaryVectorString = string.Join("", binaryVector.Select(b => b.ToString()));
+        //Console.WriteLine(binaryVectorString);
 
         
         //Console.WriteLine($"Datos guardados");

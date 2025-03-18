@@ -20,7 +20,7 @@ using DendrogramGeneratorClass;
 
 *******************************************************************************/
 
-class Program
+public partial class Program
 {
     static void Main(string[] args)
     {
@@ -31,7 +31,7 @@ class Program
         string directoryPathHM;
         Directory.CreateDirectory(directoryPathLOri);
         Directory.CreateDirectory(directoryPathHOri);
-        DendrogramGenerator root = new DendrogramGenerator(30,60,directoryPathLOri);
+        DendrogramGenerator root = new DendrogramGenerator(20,20,directoryPathLOri);
         double[,] M_ori = root.GetMatrix();
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -74,6 +74,7 @@ class Program
         //Console.WriteLine($"Plantas: {n}");
 
         //double[,] A_ori = CalcularMatrizA(M_ori, n,m);
+        /*
         for(int i = 0; i < n ; i++ )
         {
             for(int j = 0; j < m ; j++ )
@@ -82,7 +83,7 @@ class Program
             }
             Console.Write("\n");
 
-        }
+        }*/
         double[,] A_ori = M_ori;
 
         double[] list_xi = new double[] { 0.001, 6.0 };

@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+
 namespace SpeciesClass {
     public class Species {
         public int id;
@@ -18,12 +22,12 @@ namespace SpeciesClass {
             this.creation_time_pure = temp;
             this.creation_time = tiempo + temp;
             this.father = father;
-            int temp1 = GenerarPLaw();
-            int temp2 =  GenerarPLaw();
+            int temp1 = GenerarPoisson(this.lambda_sons);
+            int temp2 =  GenerarPoisson(this.lambda_sons);
 
 
-            this.first_son_creation_time = tiempo + temp1;
-            this.second_son_creation_time = tiempo + temp2;
+            this.first_son_creation_time = temp1;
+            this.second_son_creation_time = temp2;
         }
         static int GenerarPLaw()
         {
@@ -81,6 +85,40 @@ namespace SpeciesClass {
                 count += second_son.ContarNodos(); // Contar el hijo derecho
             }
             return count;
+        }
+
+        public static void SaveToJson(Species root, string path) {
+            // Asegurar que el directorio existe
+            Directory.CreateDirectory(path);
+
+            // Ruta completa del archivo
+            string filePath = Path.Combine(path, "species.json");
+
+            var speciesList = new List<object>();
+            SerializeSpecies(root, speciesList, null);
+
+            // Serializar en formato JSON con indentación
+            string jsonString = JsonSerializer.Serialize(speciesList, new JsonSerializerOptions { WriteIndented = true });
+
+            // Guardar el archivo en el path
+            File.WriteAllText(filePath, jsonString);
+            Console.WriteLine($"Archivo guardado en: {filePath}");
+        }
+
+        private static void SerializeSpecies(Species species, List<object> speciesList, int? parentId) {
+            if (species == null) return;
+
+            speciesList.Add(new {
+                id = species.id,
+                creation_time = species.creation_time,
+                creation_time_pure = species.creation_time_pure,
+                father = parentId,  // null si es la raíz
+                first_son = species.first_son?.id,
+                second_son = species.second_son?.id
+            });
+
+            SerializeSpecies(species.first_son, speciesList, species.id);
+            SerializeSpecies(species.second_son, speciesList, species.id);
         }
     }
 }
